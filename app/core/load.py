@@ -27,14 +27,8 @@ class Load:
         Загружает все плагины из папок с main.py: app/plugins/<plugin_name>/main.py
         list_first_plugins- список плагинов (имена папок), которые нужно загрузить первыми
     """
-    def init_plugins(self, list_first_plugins=None):
-        if list_first_plugins is None:
-            list_first_plugins = []
-
+    def init_plugins(self):
         self.plugin_manifests = {}
-
-        for name in list_first_plugins:
-            self.init_plugin(name)
 
         try:
             entries = listdir(self.plugins_root)
@@ -104,7 +98,7 @@ class Load:
             traceback.print_exc()
 
     """
-        Импортирует модуль по полному имени
+        Импортирует плагин по полному имени
     """
     def import_plugin(self, module_name: str):
         return importlib.import_module(module_name)

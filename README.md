@@ -12,7 +12,7 @@ unzip -o app/lib/eng_to_ipa.zip -d app/lib
 
 mv app/lib/English-to-IPA-master app/lib/eng_to_ipa
 
-rm app/lib/eng_to_ipa.zip 
+rm app/lib/eng_to_ipa.zip
 ```
 
 ```bash
@@ -36,5 +36,6 @@ pip install PyGObject
 
 cd app/lib && pip install -e . && cd ../..
 
-python3 main.py
+python3 main.py --mode mic
+python3 main.py --mode api
 ```

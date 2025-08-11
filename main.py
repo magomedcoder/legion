@@ -5,7 +5,9 @@ import queue
 import sys
 import threading
 import sounddevice
+import uvicorn
 
+from fastapi import FastAPI
 from vosk import Model, SetLogLevel, KaldiRecognizer
 
 from app.core.core import Core
@@ -26,7 +28,6 @@ def run_mic_mode(model_path: str, device=None, samplerate=None, filename=None):
         sys.exit(1)
 
     print(f"[ИНФО] Загружаю модель из {model_path}...")
-    SetLogLevel(-1)
     model = Model(model_path)
 
     if samplerate is None:
@@ -59,6 +60,17 @@ def run_mic_mode(model_path: str, device=None, samplerate=None, filename=None):
             core.update_timers()
             if dump_fn:
                 dump_fn.write(data)
+
+"""
+    Запускает ассистента в API-режиме (HTTP + WebSocket)
+"""
+def run_api_mode():
+    print("[ИНФО] Запуск API-режима...")
+    app = FastAPI()
+    core = Core()
+    core.fastApiApp = app
+    core.init_with_plugins()
+    uvicorn.run(app, host=core.api_host, port=core.api_port, log_level=core.api_log_level)
 
 """
     Блокирует приём звука с микрофона
@@ -99,13 +111,19 @@ def callback(indata, frames, time, status):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Голосовой ассистент")
+    parser.add_argument('--mode', choices=['mic', 'api'], required=True, help="Режим работы: mic - с микрофона, api - запуск HTTP/WS API")
     parser.add_argument('-m', '--model', type=str, default='./app/models/vosk', help='Путь к модели Vosk (по умолчанию ./app/models/vosk)')
     parser.add_argument('-d', '--device', type=int_or_str, help='ID или название устройства микрофона')
     parser.add_argument('-r', '--samplerate', type=int, help='Частота дискретизации (например, 16000, 44100, 48000)')
     parser.add_argument('-f', '--filename', type=str, help='Сохранять входящий звук в файл (укажите путь)')
     args = parser.parse_args()
+    
+    SetLogLevel(-1)
 
     if args.model is None:
         args.model = "./app/models/vosk"
 
-    run_mic_mode(model_path=args.model, device=args.device, samplerate=args.samplerate, filename=args.filename)
+    if args.mode == 'mic':
+        run_mic_mode(model_path=args.model, device=args.device, samplerate=args.samplerate, filename=args.filename)
+    elif args.mode == 'api':
+        run_api_mode()

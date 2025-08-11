@@ -12,6 +12,7 @@ from typing import Dict
 from app.core.load import Load
 from app.utils.all_num_to_text import all_num_to_text
 from app.lib.mpcapi.core import MpcAPI
+import app.lib.lingua_franca
 
 """
     Ядро ассистента
@@ -30,6 +31,11 @@ class Core(Load):
     def __init__(self):
         # Инициируем базовый загрузчик плагинов
         Load.__init__(self)
+
+        # Настройки API 
+        self.api_host = "127.0.0.1"
+        self.api_port = 8000
+        self.api_log_level = "info"
 
         # Текущий синтезатор (инстанс), таймеры и их колбэки
         self.ttsSynth = None
@@ -65,7 +71,7 @@ class Core(Load):
         self.fuzzy_processors: Dict[str, tuple[Callable, Callable]] = {}
 
         # Имена для обращения к ассистенту
-        self.voiceAssNames = []
+        self.voiceAssNames = ["легион"]
 
         # Доп. команда, которую нужно подставить при обращении по конкретному имени
         self.voiceAssNameRunCmd = {}
@@ -75,11 +81,9 @@ class Core(Load):
 
         # Рабочая директория рантайма
         self.runtime_dir = "runtime"
-        if not os.path.exists(self.runtime_dir):
-            os.mkdir(self.runtime_dir)
 
         # Папка кэша TTS
-        self.tts_cache_dir = "runtime/tts-cache"
+        self.tts_cache_dir = "runtime/cache/tts"
 
         # Идентификаторы движков TTS, а также проигрывателя
         self.ttsEngineId = "pyttsx"
@@ -87,7 +91,7 @@ class Core(Load):
         self.playWavEngineId = "audioplayer"
 
         # Политика логирования ("all"/"cmd"/"") и временная папка
-        self.logPolicy = ""
+        self.logPolicy = "cmd"
         self.tmpdir = "runtime/temp"
 
         # Счётчик временных файлов
@@ -120,13 +124,15 @@ class Core(Load):
         # Полная входная команда (оригинал)
         self.input_cmd_full: str = ""
 
+        # Ссылка на экземпляр FastAPI
+        self.fastApiApp = None
 
         # Параметры логирования
         self.log_console = True
         self.log_console_level = "WARNING"
         self.log_file = False
         self.log_file_level = "DEBUG"
-        self.log_file_name = "log.txt"
+        self.log_file_name = "/runtime/log"
 
         # Идентификатор движка нормализации (для русских TTS)
         # "none" - без нормализации
@@ -134,13 +140,69 @@ class Core(Load):
         self.normalization_engine: str = "default"
 
         # Список типов плагинов (например, включает ли "classic" поведение)
-        self.plugin_types: list[str] = []
+        self.plugin_types: list[str] = ["default"]
+
+        # Язык для библиотеки lingua-franca (преобразование чисел в текст)
+        self.lingua_franca_lang: str = "ru"
+
+        # Ответ, если команда не распознана
+        self.replyNoCommandFound: str = "Извини, я не поняла"
+
+        # Ответ, если команда не распознана в контексте диалога
+        self.replyNoCommandFoundInContext: str = "Не поняла..."
+
+        # Порог уверенности для нечеткого распознавания команд
+        self.fuzzyThreshold = 0.5,
+
+        if not os.path.exists(self.runtime_dir):
+            os.mkdir(self.runtime_dir)
+
+        # Кэш TTS
+        os.makedirs(self.tmpdir, exist_ok=True)
+        os.makedirs(self.tts_cache_dir, exist_ok=True)
+        os.makedirs(os.path.join(self.tts_cache_dir, self.ttsEngineId), exist_ok=True)
+
+        # Язык для чисел
+        app.lib.lingua_franca.load_language(self.lingua_franca_lang)
+
+        # Нормализация
+        if self.normalization_engine == "default":
+            self.normalization_engine = "prepare"
+
+        if self.log_console or self.log_file:
+            # Сбрасываем старые обработчики, чтобы избежать дублирования логов
+            root_logger = logging.getLogger()
+            for handler in root_logger.handlers[:]:
+                root_logger.removeHandler(handler)
+
+            # Общий уровень - минимальный из двух
+            root_logger.setLevel(min(self.log_console_level, self.log_file_level))
+
+            if self.log_console:
+                console_handler = logging.StreamHandler()
+                console_handler.setLevel(self.log_console_level)
+                console_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+                root_logger.addHandler(console_handler)
+
+            if self.log_file:
+                file_handler = logging.FileHandler(self.log_file_name)
+                file_handler.setLevel(self.log_file_level)
+                file_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+                root_logger.addHandler(file_handler)
+
+            logger = logging.getLogger(__name__)
+            if self.log_console:
+                logger.info("Вывод логов в консоль включён")
+
+            if self.log_file:
+                logger.info("Вывод логов в файл включён")
+
 
     """
         Инициализирует плагины и выводит информацию, затем настраивает голос
     """
     def init_with_plugins(self):
-        self.init_plugins(["core"])
+        self.init_plugins()
         self.setup_assistant_voice()
 
     """
@@ -282,7 +344,7 @@ class Core(Load):
 
         # Возврат только текста
         if "saytxt" in remoteTTSList:
-            self.remoteTTSResult["restxt"] = text_to_speech
+            self.remoteTTSResult["txt"] = text_to_speech
             is_processed = True
 
         # Возврат WAV как base64
@@ -399,7 +461,7 @@ class Core(Load):
 
         # 3) Fuzzy-поиск
         if threshold is None:
-            threshold = self.plugin_options("core")["fuzzyThreshold"]
+            threshold = self.fuzzyThreshold
 
         for fuzzy_processor_k in self.fuzzy_processors.keys():
             res = None
@@ -461,10 +523,10 @@ class Core(Load):
             # Если команда не найдена
             if self.context is None:
                 # вне контекста
-                self.say(self.plugin_options("core")["replyNoCommandFound"])
+                self.say(self.replyNoCommandFound)
             else:
                 # внутри контекста
-                self.say(self.plugin_options("core")["replyNoCommandFoundInContext"])
+                self.say(self.replyNoCommandFoundInContext)
                 # перезапускаем таймер контекста
                 if self.contextTimer is not None:
                     self.context_set(self.context, self.contextTimerLastDuration)
