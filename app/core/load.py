@@ -25,8 +25,11 @@ class Load:
     """
         Загружает все расширения из папок с main.py: app/extensions/<extension_name>/main.py
     """
-    def init_extensions(self):
+    def init_extensions(self, list_first_extensions=[]):
         self.extension_manifests = {}
+
+        for name in list_first_extensions:
+            self.init_extension(name)
 
         try:
             entries = listdir(self.extensions_root)

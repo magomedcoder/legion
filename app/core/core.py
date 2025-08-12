@@ -202,7 +202,7 @@ class Core(Load):
         Инициализирует расширения и выводит информацию, затем настраивает голосовой движок
     """
     def init_with_extensions(self):
-        self.init_extensions()
+        self.init_extensions(["resource_downloader"])
         self.setup_assistant_voice()
 
     """

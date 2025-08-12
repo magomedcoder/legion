@@ -17,29 +17,28 @@ mic_blocked = threading.Event()
 q = queue.Queue()
 
 """
-    Запускает ассистента в режиме микрофона
-        1. Загружает модель Vosk
-        2. Читает звук с микрофона
-        3. Передаёт распознанный текст в ядро Core
+    Легион в режиме микрофона:
+        1. Чтение звука с микрофона
+        2. Передача распознанного текста в ядро Core
 """
-def run_mic_mode(model_path: str, device=None, samplerate=None, filename=None):
-    if not os.path.exists(model_path):
-        print(f"[ОШИБКА] Модель не найдена: {model_path}")
-        sys.exit(1)
-
-    print(f"[ИНФО] Загружаю модель из {model_path}...")
-    model = Model(model_path)
-
+def run_mic_mode(device=None, samplerate=None):
     if samplerate is None:
         device_info = sounddevice.query_devices(device, 'input')
         samplerate = int(device_info['default_samplerate'])
         print(f"[ИНФО] Используется частота дискретизации: {samplerate} Гц")
 
-    dump_fn = open(filename, "wb") if filename else None
+    model_path = "./app/models/vosk"
 
     core = Core()
     core.init_with_extensions()
-    print("[ИНФО] Ассистент инициализирован, ожидание голосовых команд...")
+
+    if not os.path.exists(model_path):
+        print(f"[ОШИБКА] Модель не найдена: {model_path}")
+        sys.exit(1)
+
+    model = Model(model_path)
+
+    print("[ИНФО] Легион инициализирован, ожидание голосовых команд...")
 
     with sounddevice.RawInputStream(samplerate=samplerate, blocksize=8000, device=device, dtype='int16', channels=1, callback=callback):
         rec = KaldiRecognizer(model, samplerate)
@@ -58,14 +57,12 @@ def run_mic_mode(model_path: str, device=None, samplerate=None, filename=None):
                         # Разблокируем даже если внутри было исключение
                         unblock_mic()
             core.update_timers()
-            if dump_fn:
-                dump_fn.write(data)
 
 """
-    Запускает ассистента в API-режиме (HTTP + WebSocket)
+    Легион в API-режиме (HTTP + WebSocket)
 """
 def run_api_mode():
-    print("[ИНФО] Запуск API-режима...")
+    print("[ИНФО] Легион в API-режиме...")
     app = FastAPI()
     core = Core()
     core.fastapi_app = app
@@ -73,13 +70,13 @@ def run_api_mode():
     uvicorn.run(app, host=core.api_host, port=core.api_port, log_level=core.api_log_level)
 
 """
-    Блокирует приём звука с микрофона
+    Блокировка приёма звука с микрофона
 """
 def block_mic():
     mic_blocked.set()
 
 """
-    Разблокирует приём звука с микрофона
+    Разблокировка приёма звука с микрофона
 """
 def unblock_mic():
     mic_blocked.clear()
@@ -110,20 +107,15 @@ def callback(indata, frames, time, status):
                 break
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Голосовой ассистент")
-    parser.add_argument('--mode', choices=['mic', 'api'], required=True, help="Режим работы: mic - с микрофона, api - запуск HTTP/WS API")
-    parser.add_argument('-m', '--model', type=str, default='./app/models/vosk', help='Путь к модели Vosk (по умолчанию ./app/models/vosk)')
+    parser = argparse.ArgumentParser(description="Легион")
+    parser.add_argument('--mode', choices=['mic', 'api'], required=True, help="Режим работы: mic - с микрофона, api - HTTP/WS API")
     parser.add_argument('-d', '--device', type=int_or_str, help='ID или название устройства микрофона')
     parser.add_argument('-r', '--samplerate', type=int, help='Частота дискретизации (например, 16000, 44100, 48000)')
-    parser.add_argument('-f', '--filename', type=str, help='Сохранять входящий звук в файл (укажите путь)')
     args = parser.parse_args()
-    
+
     SetLogLevel(-1)
 
-    if args.model is None:
-        args.model = "./app/models/vosk"
-
     if args.mode == 'mic':
-        run_mic_mode(model_path=args.model, device=args.device, samplerate=args.samplerate, filename=args.filename)
+        run_mic_mode(device=args.device, samplerate=args.samplerate)
     elif args.mode == 'api':
         run_api_mode()
