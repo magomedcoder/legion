@@ -33,9 +33,9 @@ class Core(Load):
         Load.__init__(self)
 
         # Настройки API 
-        self.api_host = "127.0.0.1"
+        self.api_host = "0.0.0.0"
         self.api_port = 8000
-        self.api_log_level = "info"
+        self.api_log_level = "error"
 
         # Текущий синтезатор (инстанс), таймеры и их колбэки
         self.tts_synth = None
@@ -83,16 +83,18 @@ class Core(Load):
         self.runtime_dir = "runtime"
 
         # Папка кэша TTS
-        self.tts_cache_dir = "runtime/cache/tts"
+        self.tts_cache_dir = "cache/tts"
 
         # Идентификаторы движков TTS, а также проигрывателя
         self.tts_engine_id = "pyttsx"
         self.tts_engine_id_2 = ""
         self.play_wav_engine_id = "audioplayer"
 
-        # Политика логирования ("all"/"cmd"/"") и временная папка
+        # Политика логирования all, cmd
         self.log_policy = "cmd"
-        self.tmp_dir = "runtime/temp"
+
+        # Временная папка
+        self.tmp_dir = "temp"
 
         # Счётчик временных файлов
         self.tmp_cnt = 0  
@@ -130,17 +132,13 @@ class Core(Load):
         # Параметры логирования
         self.log_console = True
         self.log_console_level = "WARNING"
-        self.log_file = False
-        self.log_file_level = "DEBUG"
-        self.log_file_name = "/runtime/log"
+        self.log_file = True
+        self.log_file_level = "WARNING"
 
         # Идентификатор движка нормализации (для русских TTS)
         # "none" - без нормализации
         # отвечает за нормализацию текста для русских TTS
         self.normalization_engine: str = "default"
-
-        # Список типов расширений
-        self.extension_types: list[str] = ["default"]
 
         # Язык для библиотеки lingua-franca (преобразование чисел в текст)
         self.lingua_franca_lang: str = "ru"
@@ -153,11 +151,8 @@ class Core(Load):
 
         # Порог уверенности для нечеткого распознавания команд
         self.fuzzy_threshold = 0.5,
-
-        if not os.path.exists(self.runtime_dir):
-            os.mkdir(self.runtime_dir)
-
-        # Кэш TTS
+ 
+        os.makedirs(self.runtime_dir, exist_ok=True)
         os.makedirs(self.tmp_dir, exist_ok=True)
         os.makedirs(self.tts_cache_dir, exist_ok=True)
         os.makedirs(os.path.join(self.tts_cache_dir, self.tts_engine_id), exist_ok=True)
@@ -178,23 +173,20 @@ class Core(Load):
             # Общий уровень - минимальный из двух
             root_logger.setLevel(min(self.log_console_level, self.log_file_level))
 
+            logger = logging.getLogger(__name__)
+
             if self.log_console:
                 console_handler = logging.StreamHandler()
                 console_handler.setLevel(self.log_console_level)
                 console_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
                 root_logger.addHandler(console_handler)
-
-            if self.log_file:
-                file_handler = logging.FileHandler(self.log_file_name)
-                file_handler.setLevel(self.log_file_level)
-                file_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
-                root_logger.addHandler(file_handler)
-
-            logger = logging.getLogger(__name__)
-            if self.log_console:
                 logger.info("Вывод логов в консоль включён")
 
             if self.log_file:
+                file_handler = logging.FileHandler(self.runtime_dir + "/legion.log")
+                file_handler.setLevel(self.log_file_level)
+                file_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+                root_logger.addHandler(file_handler)
                 logger.info("Вывод логов в файл включён")
 
 
@@ -414,7 +406,7 @@ class Core(Load):
     """
     def get_tempfilename(self):
         self.tmp_cnt += 1
-        return self.tmp_dir + "/core_" + str(self.tmp_cnt)
+        return self.runtime_dir + "/" +self.tmp_dir + "/core_" + str(self.tmp_cnt)
 
     """
         Возвращает путь к кэш-файлу WAV для заданного текста, учитывая id TTS
@@ -423,7 +415,7 @@ class Core(Load):
         _hash = hashlib.md5(text_to_speech.encode('utf-8')).hexdigest()
         # Префикс из первых 40 символов + md5
         filename = ".".join([text_to_speech[:40], _hash, "wav"])
-        return self.tts_cache_dir + "/" + self.tts_engine_id + "/" + filename
+        return self.runtime_dir + "/" + self.tts_cache_dir + "/" + self.tts_engine_id + "/" + filename
 
     """
         Преобразует все цифры в тексте в слова (для лучшего озвучивания)
@@ -510,15 +502,12 @@ class Core(Load):
             return
 
         try:
-            # Разрешать ли поведение старых/классических расширений
-            is_allow_classic_extensions = (not is_first_call) or ("classic" in self.extension_types)
-            if is_allow_classic_extensions:
-                res = self.find_best_cmd_with_fuzzy(command, context, True)
-                if res is not None:
-                    keyall, probability, rest_phrase = res
-                    next_context = context[keyall]
-                    self.execute_next(rest_phrase, next_context)
-                    return
+            res = self.find_best_cmd_with_fuzzy(command, context, True)
+            if res is not None:
+                keyall, probability, rest_phrase = res
+                next_context = context[keyall]
+                self.execute_next(rest_phrase, next_context)
+                return
 
             # Если команда не найдена
             if self.context is None:
@@ -655,9 +644,9 @@ class Core(Load):
 
         if self.log_policy == "all":
             if self.context is None:
-                print("Input: ", voice_input_str)
+                print("Ввод (команда): ", voice_input_str)
             else:
-                print("Input (in context): ", voice_input_str)
+                print("Ввод (команда в контексте): ", voice_input_str)
 
         try:
             voice_input = voice_input_str.split(" ")

@@ -19,7 +19,8 @@ from app.utils.num_to_text_ru import num2text
         удали все таймеры|сбрось все таймеры|отмени все таймеры -> удалить все таймеры
         подбрось|брось монету|монетку                           -> монетка
         подбрось|брось кубик|кость                              -> кубик
-
+        команды                                                 -> перечислить все доступные голосовые команды
+        
     Опции:
         # время
         sayNoon: bool             - говорить «полдень» / «полночь» для 12:00 / 00:00
@@ -63,6 +64,8 @@ def start(core: Core):
                 "монету|монетку": _play_coin,
                 "кубик|кость": _play_dice,
             },
+
+            "команды": _list_all_commands,
         }
     }
     return manifest
@@ -321,3 +324,25 @@ def _play_coin(core: Core, phrase: str):
 
 def _play_dice(core: Core, phrase: str):
     core.play_voice_assistant_speech(random.choice(["Выпала единица", "Выпало два", "Выпало три", "Выпало четыре", "Выпало пять", "Выпало шесть"]))
+
+def _list_all_commands(core: Core, phrase: str):
+    manifest = start(core)
+    commands_list = []
+
+    def _extract_cmds(cmds, prefix=""):
+        for key, value in cmds.items():
+            if isinstance(value, dict):
+                for sub_key in value.keys():
+                    commands_list.append((prefix + key + " " + sub_key).strip())
+            else:
+                commands_list.append((prefix + key).strip())
+
+    _extract_cmds(manifest["commands"])
+
+    commands_list = sorted(set(commands_list))
+
+    print("[СПИСОК КОМАНД]:")
+    for cmd in commands_list:
+        print(f" - {cmd}")
+
+    # core.say("Доступные команды: " + "; ".join(commands_list))
