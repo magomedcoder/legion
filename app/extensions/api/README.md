@@ -1,10 +1,41 @@
 ## HTTP API
 
-### `GET /tts-wav`
-Генерирует речь из текста (режим ответа - WAV в base64)
+### `GET /api/v1/health`
 
-**Query:**
-- `text` - произносимый текст (строка)
+Проверка состояния сервиса
+
+**Response 200**
+
+```json
+{
+  "status": "ok"
+}
+```
+
+---
+
+| Значение        | Ответ                                          |
+| --------------- | ---------------------------------------------- |
+| `none`          | `{"text": null, "wav_base64": null}`           |
+| `saytxt`        | `{"text": "...", "wav_base64": null}`          |
+| `saywav`        | `{"text": null, "wav_base64": "<base64 WAV>"}` |
+| `saytxt,saywav` | `{"text": "...", "wav_base64": "<...>"}`       |
+
+---
+
+### `POST /api/v1/synthesize`
+
+Синтезирует речь из текста, возвращает WAV в base64
+
+**Request (JSON)**
+
+```json
+{
+  "text": "привет"
+}
+```
+
+**Response 200**
 
 ```json
 {
@@ -14,63 +45,114 @@
 
 ---
 
-### `GET /send-txt-cmd`
-Отправляет **команду** в текущий контекст (или глобально, если контекста нет)
+### `POST /api/v1/commands`
 
-**Query:**
-- `cmd` - текст команды
-- `format` - `none | saytxt | saywav | saytxt,saywav` (по умолчанию `"none"`)
+Отправляет **команду** ассистенту (в текущем контексте)
 
----
-
-### `GET /send-raw-txt`
-Отправляет **сырую фразу**
-
-**Query:**
-- `txt` - распознанная фраза
-- `format` - `none | saytxt | saywav | saytxt,saywav`
-
-**Response:**
-- `NO_VA_NAME`, если ассистент не распознан;
-- иначе объект/строка согласно `format`
-
----
-
-## WebSocket
-
-### `/ws-raw-text`
+**Request (JSON)**
 
 ```json
 {
-    "txt": "легион поставь таймер 5 минут",
-    "format": "saytxt"
+  "text": "включи таймер на 5 минут",
+  "format": "none | saytxt | saywav | saytxt,saywav"
+}
+```
+
+**Response 202 (пример)**
+
+```json
+{
+  "text": "ставлю таймер на 5 минут",
+  "wav_base64": "<...>"
 }
 ```
 
 ---
 
-### `/ws-raw-text-cmd`
+### `POST /api/v1/utterances`
+
+Передаёт **сырую фразу** (распознанный текст) для обработки ассистентом
+
+**Request (JSON)**
 
 ```json
 {
-    "txt": "таймер 5 минут",
-    "format": "saytxt,saywav"
+  "text": "легион поставь таймер 5 минут",
+  "format": "saytxt"
+}
+```
+
+**Response 200**
+
+```json
+{
+  "text": "ставлю таймер на 5 минут"
+}
+```
+
+**Response 404**
+
+```json
+{
+  "detail": "Ассистент не распознан в фразе"
 }
 ```
 
 ---
 
-### `/ws-mic`
-Стриминг **байтов аудио** для распознавания (при `enable_ws_asr=true`)
-48000 Гц, format: `"saytxt,saywav"`
+## WebSocket API
 
-Формат аудио: raw PCM 16-bit, mono, Little-Endian
+### `/ws/asr/stream`
+
+Потоковая передача **аудио** для распознавания речи (ASR)
+
+- Частота дискретизации: **48000 Гц**
+- Формат входных данных: **raw PCM 16-bit, mono, Little-Endian**
+- Формат ответа: `"saytxt,saywav"`
 
 ---
 
-## Форматы ответов
+### `/ws/commands`
 
-- **`none`** - пустая
-- **`saytxt`** - `{ "text": "..." }`
-- **`saywav`** - `{ "wav_base64": "<base64 WAV>" }`
-- **`saytxt,saywav`** - оба ключа
+Передача команд в режиме WebSocket
+
+**Вход**
+
+```json
+{
+  "text": "таймер 5 минут",
+  "format": "saytxt,saywav"
+}
+```
+
+**Выход**
+
+```json
+{
+  "text": "ставлю таймер на 5 минут",
+  "wav_base64": "<...>"
+}
+```
+
+---
+
+### `/ws/utterances`
+
+Передача «сырых» фраз в режиме WebSocket
+
+**Входящее сообщение (JSON)**
+
+```json
+{
+  "text": "легион поставь таймер 5 минут",
+  "format": "saytxt"
+}
+```
+
+**Исходящее сообщение (JSON)**
+
+```json
+{
+  "text": "ставлю таймер на 5 минут"
+}
+```

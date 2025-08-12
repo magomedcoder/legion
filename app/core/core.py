@@ -9,6 +9,7 @@ import traceback
 from collections.abc import Callable
 from threading import Timer
 from typing import Dict
+from pathlib import Path
 from app.core.load import Load
 from app.utils.all_num_to_text import all_num_to_text
 from app.lib.mpcapi.core import MpcAPI
@@ -152,10 +153,13 @@ class Core(Load):
         # Порог уверенности для нечеткого распознавания команд
         self.fuzzy_threshold = 0.5,
  
-        os.makedirs(self.runtime_dir, exist_ok=True)
-        os.makedirs(self.tmp_dir, exist_ok=True)
-        os.makedirs(self.tts_cache_dir, exist_ok=True)
-        os.makedirs(os.path.join(self.tts_cache_dir, self.tts_engine_id), exist_ok=True)
+        self.runtime_path = Path(self.runtime_dir)
+        self.tmp_path = self.runtime_path / self.tmp_dir
+        self.tts_cache_path = self.runtime_path / self.tts_cache_dir
+        self.tts_cache_engine_path = self.tts_cache_path / self.tts_engine_id
+
+        for p in (self.runtime_path, self.tmp_path, self.tts_cache_engine_path):
+            p.mkdir(parents=True, exist_ok=True)
 
         # Язык для чисел
         app.lib.lingua_franca.load_language(self.lingua_franca_lang)
@@ -323,7 +327,7 @@ class Core(Load):
                 if self.use_tts_cache:
                     tts_file = self.get_tts_cache_file(text_to_speech)
                 else:
-                    tts_file = self.get_tempfilename() + ".wav"
+                    tts_file = self.get_temp_filename() + ".wav"
 
                 if not self.use_tts_cache or self.use_tts_cache and not os.path.exists(tts_file):
                     self.tts_to_filewav(text_to_speech, tts_file)
@@ -344,7 +348,7 @@ class Core(Load):
             if self.use_tts_cache:
                 tts_file = self.get_tts_cache_file(text_to_speech)
             else:
-                tts_file = self.get_tempfilename() + ".wav"
+                tts_file = self.get_temp_filename() + ".wav"
 
             if not self.use_tts_cache or self.use_tts_cache and not os.path.exists(tts_file):
                 self.tts_to_filewav(text_to_speech, tts_file)
@@ -376,7 +380,7 @@ class Core(Load):
         if self.ttss[self.tts_engine_id_2][1] is not None:
             self.ttss[self.tts_engine_id_2][1](self, text_to_speech)
         else:
-            tempfilename = self.get_tempfilename() + ".wav"
+            tempfilename = self.get_temp_filename() + ".wav"
             self.tts_to_filewav2(text_to_speech, tempfilename)
             self.play_wav(tempfilename)
             if os.path.exists(tempfilename):
@@ -404,9 +408,9 @@ class Core(Load):
     """
         Создаёт уникальное имя временного файла в runtime/temp
     """
-    def get_tempfilename(self):
+    def get_temp_filename(self):
         self.tmp_cnt += 1
-        return self.runtime_dir + "/" +self.tmp_dir + "/core_" + str(self.tmp_cnt)
+        return str(self.tmp_path / f"core_{self.tmp_cnt}")
 
     """
         Возвращает путь к кэш-файлу WAV для заданного текста, учитывая id TTS
@@ -415,7 +419,7 @@ class Core(Load):
         _hash = hashlib.md5(text_to_speech.encode('utf-8')).hexdigest()
         # Префикс из первых 40 символов + md5
         filename = ".".join([text_to_speech[:40], _hash, "wav"])
-        return self.runtime_dir + "/" + self.tts_cache_dir + "/" + self.tts_engine_id + "/" + filename
+        return str(self.tts_cache_engine_path / filename)
 
     """
         Преобразует все цифры в тексте в слова (для лучшего озвучивания)
