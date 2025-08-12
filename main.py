@@ -38,7 +38,7 @@ def run_mic_mode(model_path: str, device=None, samplerate=None, filename=None):
     dump_fn = open(filename, "wb") if filename else None
 
     core = Core()
-    core.init_with_plugins()
+    core.init_with_extensions()
     print("[ИНФО] Ассистент инициализирован, ожидание голосовых команд...")
 
     with sounddevice.RawInputStream(samplerate=samplerate, blocksize=8000, device=device, dtype='int16', channels=1, callback=callback):
@@ -68,8 +68,8 @@ def run_api_mode():
     print("[ИНФО] Запуск API-режима...")
     app = FastAPI()
     core = Core()
-    core.fastApiApp = app
-    core.init_with_plugins()
+    core.fastapi_app = app
+    core.init_with_extensions()
     uvicorn.run(app, host=core.api_host, port=core.api_port, log_level=core.api_log_level)
 
 """

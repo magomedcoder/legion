@@ -90,7 +90,7 @@ def _fmt_date_ru(date: str) -> str:
     return f"{day_list[int(dd)-1]} {month_list[int(mm)-1]}"
 
 def _play_time(core: Core, phrase: str):
-    opts = core.plugin_options(modname) or {}
+    opts = core.extension_options(modname) or {}
     sayNoon = bool(opts.get("sayNoon", False))
     skipUnits = bool(opts.get("skipUnits", False))
     unitsSeparator = opts.get("unitsSeparator", ", ")
@@ -200,7 +200,7 @@ def _set_timer_real(core: Core, seconds: int, txt: str):
     core.play_voice_assistant_speech("Ставлю таймер на " + txt)
 
 def _after_timer(core: Core, txt: str):
-    opts = core.plugin_options(modname) or {}
+    opts = core.extension_options(modname) or {}
     times = int(opts.get("wavRepeatTimes", 1))
     wav_path = opts.get("wavPath", "assets/audio/timer.wav")
 

@@ -34,7 +34,7 @@ def start_with_options(core: Core, manifest: dict):
     Инициализация pyttsx3 и настройка параметров голоса
 """
 def init(core: Core):
-    options = core.plugin_options(modname)
+    options = core.extension_options(modname)
     core.ttsEngine = pyttsx3.init()
     voices = core.ttsEngine.getProperty("voices")
     # if 0 <= options["sysId"] < len(voices):

@@ -7,48 +7,46 @@ from os import listdir
 from os.path import isfile, isdir, join
 
 """
-    Класс загрузчика плагинов
+    Класс загрузчика расширений
 
-    Формат плагина: app/plugins/<plugin_name>/main.py
+    Формат расширения: app/extensions/<extension_name>/main.py
 
-    Каждый плагин должен содержать:
+    Каждое расширение должно реализовывать:
         start(loader) -> dict (манифест)
-        опционально: start_with_options(loader, manifest) -> dict | None - вызывается уже после установки manifest["options"]
+        (опционально) start_with_options(loader, manifest) -> dict | None - вызывается после того, как manifest["options"] заполнен значениями
 """
-
 class Load:
     def __init__(self):
         app_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-        self.plugin_manifests = {}
-        self.plugins_root = os.path.join(app_dir, "plugins")
-        self.showTracebackOnPluginErrors = False
+        self.extension_manifests = {}
+        self.extensions_root = os.path.join(app_dir, "extensions")
+        self.show_traceback_on_extension_errors = False
 
     """
-        Загружает все плагины из папок с main.py: app/plugins/<plugin_name>/main.py
-        list_first_plugins- список плагинов (имена папок), которые нужно загрузить первыми
+        Загружает все расширения из папок с main.py: app/extensions/<extension_name>/main.py
     """
-    def init_plugins(self):
-        self.plugin_manifests = {}
+    def init_extensions(self):
+        self.extension_manifests = {}
 
         try:
-            entries = listdir(self.plugins_root)
+            entries = listdir(self.extensions_root)
         except FileNotFoundError:
-            print(f"ПРЕДУПРЕЖДЕНИЕ: папка с плагинами не найдена: {self.plugins_root}", file=sys.stderr)
+            print(f"ПРЕДУПРЕЖДЕНИЕ: папка с расширениями не найдена: {self.extensions_root}", file=sys.stderr)
             entries = []
 
         for name in entries:
-            plugin_dir = join(self.plugins_root, name)
-            if isdir(plugin_dir) and isfile(join(plugin_dir, "main.py")) and name not in self.plugin_manifests:
-                self.init_plugin(name)
+            extension_dir = join(self.extensions_root, name)
+            if isdir(extension_dir) and isfile(join(extension_dir, "main.py")) and name not in self.extension_manifests:
+                self.init_extension(name)
 
     """
-        Загружает один плагин по имени папки - app/plugins/<folder_name>/main.py
+        Загружает одно расширение по имени папки: app/extensions/<folder_name>/main.py
     """
-    def init_plugin(self, folder_name: str):
-        module_path = f"app.plugins.{folder_name}.main"
+    def init_extension(self, folder_name: str):
+        module_path = f"app.extensions.{folder_name}.main"
 
         try:
-            mod = self.import_plugin(module_path)
+            mod = self.import_extension(module_path)
         except Exception as e:
             self.print_error(f"ОШИБКА: {folder_name} - ошибка импорта: {e}")
             return False
@@ -80,45 +78,45 @@ class Load:
             return False
 
         try:
-            self.process_plugin_manifest(folder_name, manifest)
+            self.process_extension_manifest(folder_name, manifest)
         except Exception as e:
             self.print_error(f"ОШИБКА: {folder_name} - ошибка обработки манифеста: {e}")
             return False
 
-        self.plugin_manifests[folder_name] = manifest
+        self.extension_manifests[folder_name] = manifest
         return True
 
     """
-        Печатает сообщение об ошибке
-        Если self.showTracebackOnPluginErrors=True - дополнительно печатает трейсбек
+        Печатает сообщение об ошибке.
+        Если self.show_traceback_on_extension_errors=True - дополнительно печатает трейсбек
     """
     def print_error(self, msg: str):
         print(msg, file=sys.stderr)
-        if self.showTracebackOnPluginErrors:
+        if self.show_traceback_on_extension_errors:
             traceback.print_exc()
 
     """
-        Импортирует плагин по полному имени
+        Импортирует расширение по полному имени
     """
-    def import_plugin(self, module_name: str):
+    def import_extension(self, module_name: str):
         return importlib.import_module(module_name)
 
     """
-        Обработка манифеста плагина (переопределяйте в наследнике при необходимости)
+        Обработка манифеста расширения (переопределяйте в наследнике при необходимости)
     """
-    def process_plugin_manifest(self, folder_name: str, manifest: dict):
-        print(f"ПЛАГИН ЗАГРУЖЕН: {folder_name} - манифест обработан")
+    def process_extension_manifest(self, folder_name: str, manifest: dict):
+        print(f"РАСШИРЕНИЕ ЗАГРУЖЕНО: {folder_name} - манифест обработан")
         return
 
     """
-        Возвращает манифест указанного плагина
+        Возвращает манифест указанного расширения
     """
-    def plugin_manifest(self, pluginname):
-        return self.plugin_manifests.get(pluginname, {})
+    def extension_manifest(self, extension_name):
+        return self.extension_manifests.get(extension_name, {})
 
     """
-        Возвращает опции указанного плагина
+        Возвращает опции указанного расширения
     """
-    def plugin_options(self, pluginname):
-        manifest = self.plugin_manifest(pluginname)
+    def extension_options(self, extension_name):
+        manifest = self.extension_manifest(extension_name)
         return manifest.get("options")

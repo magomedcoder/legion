@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 
 class Core(Load):
     def __init__(self):
-        # Инициируем базовый загрузчик плагинов
+        # Инициализируем базовый загрузчик расширений
         Load.__init__(self)
 
         # Настройки API 
@@ -38,27 +38,27 @@ class Core(Load):
         self.api_log_level = "info"
 
         # Текущий синтезатор (инстанс), таймеры и их колбэки
-        self.ttsSynth = None
+        self.tts_synth = None
 
         # Отметки времени завершения таймеров
         self.timers = [-1, -1, -1, -1, -1, -1, -1, -1]
 
         # Колбэк на обновление (не используется)
-        self.timersFuncUpd = [None, None, None, None, None, None, None, None]
+        self.timers_func_upd = [None, None, None, None, None, None, None, None]
 
         # Колбэк при завершении  
-        self.timersFuncEnd = [None, None, None, None, None, None, None, None]
+        self.timers_func_end = [None, None, None, None, None, None, None, None]
 
         # Продолжительности таймеров (пока не заполняются)
-        self.timersDuration = [0, 0, 0, 0, 0, 0, 0, 0]
+        self.timers_duration = [0, 0, 0, 0, 0, 0, 0, 0]
 
         # Словарь всех доступных команд
         self.commands = {}
 
-        # Список плагинов
-        self.plugins = {}
+        # Список расширений
+        self.extensions = {}
 
-        # Зарегистрированные TTS-плагины: id -> (init_fn, say_fn, save_to_wav_fn?)
+        # Зарегистрированные TTS-расширения: id -> (init_fn, say_fn, save_to_wav_fn?)
         self.ttss = {}
 
         # Зарегистрированные проигрыватели WAV: id -> (init_fn, play_fn)
@@ -71,13 +71,13 @@ class Core(Load):
         self.fuzzy_processors: Dict[str, tuple[Callable, Callable]] = {}
 
         # Имена для обращения к ассистенту
-        self.voiceAssNames = ["легион"]
+        self.voice_names = ["легион"]
 
         # Доп. команда, которую нужно подставить при обращении по конкретному имени
-        self.voiceAssNameRunCmd = {}
+        self.voice_name_run_cmd = {}
 
         # Использовать ли кэш TTS (wav-файлы по хэшу фраз)
-        self.useTTSCache = False
+        self.use_tts_cache = False
 
         # Рабочая директория рантайма
         self.runtime_dir = "runtime"
@@ -86,34 +86,34 @@ class Core(Load):
         self.tts_cache_dir = "runtime/cache/tts"
 
         # Идентификаторы движков TTS, а также проигрывателя
-        self.ttsEngineId = "pyttsx"
-        self.ttsEngineId2 = ""
-        self.playWavEngineId = "audioplayer"
+        self.tts_engine_id = "pyttsx"
+        self.tts_engine_id_2 = ""
+        self.play_wav_engine_id = "audioplayer"
 
         # Политика логирования ("all"/"cmd"/"") и временная папка
-        self.logPolicy = "cmd"
-        self.tmpdir = "runtime/temp"
+        self.log_policy = "cmd"
+        self.tmp_dir = "runtime/temp"
 
         # Счётчик временных файлов
-        self.tmpcnt = 0  
+        self.tmp_cnt = 0  
 
         # Последняя озвученная фраза и режим удалённого TTS
-        self.lastSay = ""
+        self.last_say = ""
 
         # Варианты: "none", "saytxt", "saywav" или комбинированно через запятую
-        self.remoteTTS = "none"  
+        self.remote_tts = "none"  
 
         # Сюда складывается результат для удалённого клиента
-        self.remoteTTSResult = None  
+        self.remote_tts_result = None  
 
         # Текущий контекст диалога и таймер его очистки
         self.context = None
-        self.contextTimer = None
-        self.contextTimerLastDuration = 0
+        self.context_timer = None
+        self.context_timer_last_duration = 0
 
         # Настройки длительности контекста и ожидания старта таймера (для удалённого TTS)
-        self.contextDefaultDuration = 10
-        self.contextRemoteWaitForCall = False
+        self.context_default_duration = 10
+        self.context_remote_wait_for_call = False
 
         # Клиент для управления плеером
         self.mpchc = MpcAPI()
@@ -125,7 +125,7 @@ class Core(Load):
         self.input_cmd_full: str = ""
 
         # Ссылка на экземпляр FastAPI
-        self.fastApiApp = None
+        self.fastapi_app = None
 
         # Параметры логирования
         self.log_console = True
@@ -139,28 +139,28 @@ class Core(Load):
         # отвечает за нормализацию текста для русских TTS
         self.normalization_engine: str = "default"
 
-        # Список типов плагинов (например, включает ли "classic" поведение)
-        self.plugin_types: list[str] = ["default"]
+        # Список типов расширений
+        self.extension_types: list[str] = ["default"]
 
         # Язык для библиотеки lingua-franca (преобразование чисел в текст)
         self.lingua_franca_lang: str = "ru"
 
         # Ответ, если команда не распознана
-        self.replyNoCommandFound: str = "Извини, я не поняла"
+        self.reply_no_command_found: str = "Извини, я не поняла"
 
         # Ответ, если команда не распознана в контексте диалога
-        self.replyNoCommandFoundInContext: str = "Не поняла..."
+        self.reply_no_command_found_context: str = "Не поняла..."
 
         # Порог уверенности для нечеткого распознавания команд
-        self.fuzzyThreshold = 0.5,
+        self.fuzzy_threshold = 0.5,
 
         if not os.path.exists(self.runtime_dir):
             os.mkdir(self.runtime_dir)
 
         # Кэш TTS
-        os.makedirs(self.tmpdir, exist_ok=True)
+        os.makedirs(self.tmp_dir, exist_ok=True)
         os.makedirs(self.tts_cache_dir, exist_ok=True)
-        os.makedirs(os.path.join(self.tts_cache_dir, self.ttsEngineId), exist_ok=True)
+        os.makedirs(os.path.join(self.tts_cache_dir, self.tts_engine_id), exist_ok=True)
 
         # Язык для чисел
         app.lib.lingua_franca.load_language(self.lingua_franca_lang)
@@ -199,28 +199,28 @@ class Core(Load):
 
 
     """
-        Инициализирует плагины и выводит информацию, затем настраивает голос
+        Инициализирует расширения и выводит информацию, затем настраивает голосовой движок
     """
-    def init_with_plugins(self):
-        self.init_plugins()
+    def init_with_extensions(self):
+        self.init_extensions()
         self.setup_assistant_voice()
 
     """
-        Подмешивает сущности из манифеста плагина в ядро
+        Подмешивает сущности из манифеста расширения в ядро:
             commands - словарь "варианты фраз" -> "следующий контекст/функция"
             tts/playwav/normalizer - регистрация соответствующих движков
             fuzzy_processor - регистрация обработчиков нечеткого сравнения
     """
-    def process_plugin_manifest(self, modname, manifest):
+    def process_extension_manifest(self, modname, manifest):
         # Команды
         if "commands" in manifest:
             for cmd in manifest["commands"].keys():
                 self.commands[cmd] = manifest["commands"][cmd]
-                # Сохраняем, к какому плагину относятся эти команды
-                if modname in self.plugins:
-                    self.plugins[modname].append(cmd)
+                # Сохраняем, к какому расширению относятся эти команды
+                if modname in self.extensions:
+                    self.extensions[modname].append(cmd)
                 else:
-                    self.plugins[modname] = [cmd]
+                    self.extensions[modname] = [cmd]
 
         # Движки TTS
         if "tts" in manifest:
@@ -256,46 +256,46 @@ class Core(Load):
         print(txt)
 
     """
-        Инициализация движков: проигрывателя WAV, нормализатора, TTS и дополнительных модулей
+        Инициализация движков: проигрывателя WAV, нормализатора, TTS и дополнительных расширений
     """
     def setup_assistant_voice(self):
         # Инициализация модуля для воспроизведения WAV-файлов
         try:
-            self.playwavs[self.playWavEngineId][0](self)
+            self.playwavs[self.play_wav_engine_id][0](self)
         except Exception as e:
-            self.print_error("Ошибка инициализации плагина проигрывания WAV (playWavEngineId)", e)
-            self.ttsEngineId = "console"
+            self.print_error("Ошибка инициализации расширения воспроизведения WAV (play_wav_engine_id)", e)
+            self.tts_engine_id = "console"
 
         # Инициализация модуля нормализации текста (приведение текста к удобному для TTS виду: замена сокращений, преобразование чисел в слова и т.д.)
         if self.normalization_engine != "none":
             try:
                 self.normalizers[self.normalization_engine][0](self)
             except Exception as e:
-                self.print_error(f"Ошибка инициализации нормализатора {self.normalization_engine}", e)
+                self.print_error(f"Ошибка инициализации расширения нормализатора {self.normalization_engine}", e)
                 self.normalization_engine = "none"
 
         # Инициализация основного TTS-движка для озвучивания ответов ассистента
         try:
-            self.ttss[self.ttsEngineId][0](self)
+            self.ttss[self.tts_engine_id][0](self)
         except Exception as e:
-            self.print_error("Ошибка инициализации плагина TTS (ttsEngineId)", e)
-            self.ttsEngineId = "console"
+            self.print_error("Ошибка инициализации расширения TTS (tts_engine_id)", e)
+            self.tts_engine_id = "console"
 
-        # Инициализация второго TTS-движка, если он задан в настройках и отличается от основного может использоваться для разных голосов или движков в зависимости от ситуации
-        if self.ttsEngineId2 == "":
-            self.ttsEngineId2 = self.ttsEngineId
-        if self.ttsEngineId2 != self.ttsEngineId:
+        # Инициализация второго TTS-движка, если он задан в настройках и отличается от основного
+        if self.tts_engine_id_2 == "":
+            self.tts_engine_id_2 = self.tts_engine_id
+        if self.tts_engine_id_2 != self.tts_engine_id:
             try:
-                self.ttss[self.ttsEngineId2][0](self)
+                self.ttss[self.tts_engine_id_2][0](self)
             except Exception as e:
-                self.print_error("Ошибка инициализации плагина TTS2 (ttsEngineId2)", e)
+                self.print_error("Ошибка инициализации расширения TTS2 (tts_engine_id_2)", e)
 
         # Инициализация всех нечетких процессоров
         for k in self.fuzzy_processors.keys():
             try:
                 self.fuzzy_processors[k][0](self)
             except Exception as e:
-                self.print_error("Ошибка инициализации fuzzy_processor {0}".format(k), e)
+                self.print_error(f"Ошибка инициализации fuzzy_processor {k}", e)
 
     """
         Нормализует текст, если выбран нормализатор; иначе возвращает исходный текст
@@ -308,68 +308,68 @@ class Core(Load):
 
     """
         Озвучивание фразы разными путями: локально или подготовка данных для удалённого клиента
-        Режимы remoteTTS:
+        Режимы remote_tts:
             none - озвучиваем локально (через say_fn или через tts->wav->play)
             saytxt - только возвращаем текст (полезно для внешних клиентов)
             saywav - генерируем wav в файл (с кэшем при необходимости), кодируем в base64 в ответ
         Можно комбинировать через запятую
     """
     def play_voice_assistant_speech(self, text_to_speech: str):
-        self.lastSay = text_to_speech
-        remoteTTSList = self.remoteTTS.split(",")
+        self.last_say = text_to_speech
+        remote_tts_list = self.remote_tts.split(",")
 
-        self.remoteTTSResult = {}
+        self.remote_tts_result = {}
         is_processed = False
 
         # Локальное озвучивание
-        if "none" in remoteTTSList:
-            if self.ttss[self.ttsEngineId][1] is not None:
-                # Если TTS-плагин поддерживает прямое озвучивание
-                self.ttss[self.ttsEngineId][1](self, text_to_speech)
+        if "none" in remote_tts_list:
+            if self.ttss[self.tts_engine_id][1] is not None:
+                # Если TTS-расширение поддерживает прямое озвучивание
+                self.ttss[self.tts_engine_id][1](self, text_to_speech)
             else:
                 # Иначе генерируем WAV во временный файл (или используем кэш)
-                if self.useTTSCache:
+                if self.use_tts_cache:
                     tts_file = self.get_tts_cache_file(text_to_speech)
                 else:
                     tts_file = self.get_tempfilename() + ".wav"
 
-                if not self.useTTSCache or self.useTTSCache and not os.path.exists(tts_file):
+                if not self.use_tts_cache or self.use_tts_cache and not os.path.exists(tts_file):
                     self.tts_to_filewav(text_to_speech, tts_file)
 
                 self.play_wav(tts_file)
-                if not self.useTTSCache and os.path.exists(tts_file):
+                if not self.use_tts_cache and os.path.exists(tts_file):
                     os.unlink(tts_file)
 
             is_processed = True
 
         # Возврат только текста
-        if "saytxt" in remoteTTSList:
-            self.remoteTTSResult["txt"] = text_to_speech
+        if "saytxt" in remote_tts_list:
+            self.remote_tts_result["txt"] = text_to_speech
             is_processed = True
 
         # Возврат WAV как base64
-        if "saywav" in remoteTTSList:
-            if self.useTTSCache:
+        if "saywav" in remote_tts_list:
+            if self.use_tts_cache:
                 tts_file = self.get_tts_cache_file(text_to_speech)
             else:
                 tts_file = self.get_tempfilename() + ".wav"
 
-            if not self.useTTSCache or self.useTTSCache and not os.path.exists(tts_file):
+            if not self.use_tts_cache or self.use_tts_cache and not os.path.exists(tts_file):
                 self.tts_to_filewav(text_to_speech, tts_file)
 
             with open(tts_file, "rb") as wav_file:
                 encoded_string = base64.b64encode(wav_file.read())
 
-            if not self.useTTSCache and os.path.exists(tts_file):
+            if not self.use_tts_cache and os.path.exists(tts_file):
                 os.unlink(tts_file)
 
-            self.remoteTTSResult["wav_base64"] = encoded_string
+            self.remote_tts_result["wav_base64"] = encoded_string
             is_processed = True
 
         if not is_processed:
-            print("Ошибка при выводе TTS - remoteTTS не был обработан.")
-            print("Текущий remoteTTS: {}".format(self.remoteTTS))
-            print("Текущий remoteTTSList: {}".format(remoteTTSList))
+            print("Ошибка при выводе TTS - remote_tts не был обработан.")
+            print("Текущий remote_tts: {}".format(self.remote_tts))
+            print("Текущий remote_tts_list: {}".format(remote_tts_list))
 
     """
         Псевдоним для play_voice_assistant_speech
@@ -381,8 +381,8 @@ class Core(Load):
         Озвучивает через второй TTS-движок
     """
     def say2(self, text_to_speech: str):  
-        if self.ttss[self.ttsEngineId2][1] is not None:
-            self.ttss[self.ttsEngineId2][1](self, text_to_speech)
+        if self.ttss[self.tts_engine_id_2][1] is not None:
+            self.ttss[self.tts_engine_id_2][1](self, text_to_speech)
         else:
             tempfilename = self.get_tempfilename() + ".wav"
             self.tts_to_filewav2(text_to_speech, tempfilename)
@@ -394,8 +394,8 @@ class Core(Load):
         Сохранение синтеза в WAV-файл основным TTS
     """
     def tts_to_filewav(self, text_to_speech: str, filename: str):
-        if len(self.ttss[self.ttsEngineId]) > 2:
-            self.ttss[self.ttsEngineId][2](self, text_to_speech, filename)
+        if len(self.ttss[self.tts_engine_id]) > 2:
+            self.ttss[self.tts_engine_id][2](self, text_to_speech, filename)
         else:
             print("Сохранение в файл не поддерживается этим TTS-движком")
 
@@ -404,8 +404,8 @@ class Core(Load):
         Через второй движок
     """
     def tts_to_filewav2(self, text_to_speech: str, filename: str):
-        if len(self.ttss[self.ttsEngineId2]) > 2:
-            self.ttss[self.ttsEngineId2][2](self, text_to_speech, filename)
+        if len(self.ttss[self.tts_engine_id_2]) > 2:
+            self.ttss[self.tts_engine_id_2][2](self, text_to_speech, filename)
         else:
             print("Сохранение в файл не поддерживается этим TTS-движком")
 
@@ -413,8 +413,8 @@ class Core(Load):
         Создаёт уникальное имя временного файла в runtime/temp
     """
     def get_tempfilename(self):
-        self.tmpcnt += 1
-        return self.tmpdir + "/core_" + str(self.tmpcnt)
+        self.tmp_cnt += 1
+        return self.tmp_dir + "/core_" + str(self.tmp_cnt)
 
     """
         Возвращает путь к кэш-файлу WAV для заданного текста, учитывая id TTS
@@ -423,7 +423,7 @@ class Core(Load):
         _hash = hashlib.md5(text_to_speech.encode('utf-8')).hexdigest()
         # Префикс из первых 40 символов + md5
         filename = ".".join([text_to_speech[:40], _hash, "wav"])
-        return self.tts_cache_dir + "/" + self.ttsEngineId + "/" + filename
+        return self.tts_cache_dir + "/" + self.tts_engine_id + "/" + filename
 
     """
         Преобразует все цифры в тексте в слова (для лучшего озвучивания)
@@ -461,7 +461,7 @@ class Core(Load):
 
         # 3) Fuzzy-поиск
         if threshold is None:
-            threshold = self.fuzzyThreshold
+            threshold = self.fuzzy_threshold
 
         for fuzzy_processor_k in self.fuzzy_processors.keys():
             res = None
@@ -510,9 +510,9 @@ class Core(Load):
             return
 
         try:
-            # Разрешать ли поведение старых/классических плагинов
-            is_allow_classic_plugins = (not is_first_call) or ("classic" in self.plugin_types)
-            if is_allow_classic_plugins:
+            # Разрешать ли поведение старых/классических расширений
+            is_allow_classic_extensions = (not is_first_call) or ("classic" in self.extension_types)
+            if is_allow_classic_extensions:
                 res = self.find_best_cmd_with_fuzzy(command, context, True)
                 if res is not None:
                     keyall, probability, rest_phrase = res
@@ -523,13 +523,13 @@ class Core(Load):
             # Если команда не найдена
             if self.context is None:
                 # вне контекста
-                self.say(self.replyNoCommandFound)
+                self.say(self.reply_no_command_found)
             else:
                 # внутри контекста
-                self.say(self.replyNoCommandFoundInContext)
+                self.say(self.reply_no_command_found_context)
                 # перезапускаем таймер контекста
-                if self.contextTimer is not None:
-                    self.context_set(self.context, self.contextTimerLastDuration)
+                if self.context_timer is not None:
+                    self.context_set(self.context, self.context_timer_last_duration)
         except Exception as err:
             logger.exception(err)
 
@@ -562,7 +562,7 @@ class Core(Load):
         for i in range(len(self.timers)):
             if self.timers[i] <= 0:
                 self.timers[i] = curtime + duration
-                self.timersFuncEnd[i] = timerFuncEnd
+                self.timers_func_end[i] = timerFuncEnd
                 print(
                     f"Новый таймер #{i} | "
                     f"Текущее время: {self.util_time_to_readable(curtime)} | "
@@ -578,11 +578,11 @@ class Core(Load):
         Очищает таймер по индексу. При runEndFunc=True дополнительно вызовет его end-колбэк
     """
     def clear_timer(self, index, runEndFunc=False):
-        if runEndFunc and self.timersFuncEnd[index] is not None:
-            self.call_ext_func(self.timersFuncEnd[index])
+        if runEndFunc and self.timers_func_end[index] is not None:
+            self.call_ext_func(self.timers_func_end[index])
         self.timers[index] = -1
-        self.timersDuration[index] = 0
-        self.timersFuncEnd[index] = None
+        self.timers_duration[index] = 0
+        self.timers_func_end[index] = None
 
     """
         Останавливает все активные таймеры без вызова их колбэков
@@ -591,7 +591,7 @@ class Core(Load):
         for i in range(len(self.timers)):
             if self.timers[i] >= 0:
                 self.timers[i] = -1
-                self.timersFuncEnd[i] = None
+                self.timers_func_end[i] = None
 
     """
         Проверяет таймеры и завершает те, чьё время истекло (с вызовом end-колбэков)
@@ -610,7 +610,7 @@ class Core(Load):
                     self.clear_timer(i, True)
 
     """
-        Вызывает функцию плагина
+        Вызывает функцию расширения
 
         Поддерживаются варианты:
             funcparam = (func, param) - вызовет func(self, param)
@@ -623,7 +623,7 @@ class Core(Load):
             funcparam(self)
 
     """
-        Вызывает функцию плагина, передавая ещё и исходную фразу
+        Вызывает функцию расширения, передавая ещё и исходную фразу
 
         Поддерживаются варианты:
             funcparam = (func, param) - вызовет func(self, phrase, param)
@@ -640,7 +640,7 @@ class Core(Load):
         Воспроизводит WAV-файл через зарегистрированный движок playwav
     """
     def play_wav(self, wavfile):
-        self.playwavs[self.playWavEngineId][1](self, wavfile)
+        self.playwavs[self.play_wav_engine_id][1](self, wavfile)
 
     """
         Разбирает входную строку распознанной речи и запускает команду
@@ -653,7 +653,7 @@ class Core(Load):
         if voice_input_str is None:
             return False
 
-        if self.logPolicy == "all":
+        if self.log_policy == "all":
             if self.context is None:
                 print("Input: ", voice_input_str)
             else:
@@ -666,9 +666,9 @@ class Core(Load):
                 for ind in range(len(voice_input)):
                     callname = voice_input[ind]
 
-                    if callname in self.voiceAssNames:
+                    if callname in self.voice_names:
                         self.cur_callname = callname
-                        if self.logPolicy == "cmd":
+                        if self.log_policy == "cmd":
                             print("Ввод (команда): ", voice_input_str)
 
                         # Остаток после имени ассистента
@@ -677,9 +677,9 @@ class Core(Load):
                         ])
 
                         # Доп. подстановка команды для конкретного имени
-                        if callname in self.voiceAssNameRunCmd:
-                            command_options = self.voiceAssNameRunCmd.get(callname) + " " + command_options
-                            print("Модифицированный ввод, добавлено ", self.voiceAssNameRunCmd.get(callname))
+                        if callname in self.voice_name_run_cmd:
+                            command_options = self.voice_name_run_cmd.get(callname) + " " + command_options
+                            print("Модифицированный ввод, добавлено ", self.voice_name_run_cmd.get(callname))
 
                         # Хук: выполнить что-то до запуска команды
                         if func_before_run_cmd is not None:
@@ -689,7 +689,7 @@ class Core(Load):
                         haveRun = True
                         break
             else:
-                if self.logPolicy == "cmd":
+                if self.log_policy == "cmd":
                     print("Ввод (команда в контексте): ", voice_input_str)
 
                 if func_before_run_cmd is not None:
@@ -707,32 +707,32 @@ class Core(Load):
     """
         Устанавливает новый контекст и запускает таймер его очистки
 
-        Если contextRemoteWaitForCall=True и используется удалённый TTS (saytxt/saywav), таймер может стартовать позже (после фактического вывода)
+        Если context_remote_wait_for_call=True и используется удалённый TTS (saytxt/saywav), таймер может стартовать позже (после фактического вывода)
     """
     def context_set(self, context, duration=None):
         if duration is None:
-            duration = self.contextDefaultDuration
+            duration = self.context_default_duration
 
         self.context_clear()
 
         self.context = context
-        self.contextTimerLastDuration = duration
-        self.contextTimer = Timer(duration, self._context_clear_timer)
+        self.context_timer_last_duration = duration
+        self.context_timer = Timer(duration, self._context_clear_timer)
 
-        remoteTTSList = self.remoteTTS.split(",")
-        if self.contextRemoteWaitForCall and ("saytxt" in remoteTTSList or "saywav" in remoteTTSList):
+        remote_tts_list = self.remote_tts.split(",")
+        if self.context_remote_wait_for_call and ("saytxt" in remote_tts_list or "saywav" in remote_tts_list):
             # Ждём явного старта
             # например, после отправки ответа клиенту
             pass
         else:
-            self.contextTimer.start()
+            self.context_timer.start()
 
     """
         Колбэк таймера контекста: очищает активный контекст
     """
     def _context_clear_timer(self):
         print("Context cleared after timeout")
-        self.contextTimer = None
+        self.context_timer = None
         self.context_clear()
 
     """
@@ -740,6 +740,6 @@ class Core(Load):
     """
     def context_clear(self):
         self.context = None
-        if self.contextTimer is not None:
-            self.contextTimer.cancel()
-            self.contextTimer = None
+        if self.context_timer is not None:
+            self.context_timer.cancel()
+            self.context_timer = None

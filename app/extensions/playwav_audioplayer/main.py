@@ -5,7 +5,7 @@ from audioplayer import AudioPlayer
 from app.core.core import Core
 
 """
-    Плагин воспроизведения WAV через библиотеку audioplayer
+    Расширение для воспроизведения WAV-файлов с использованием библиотеки audioplayer
 """
 
 modname = os.path.basename(__package__)[12:]

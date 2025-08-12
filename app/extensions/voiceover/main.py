@@ -6,14 +6,14 @@ from app.core.core import Core
 """
     Голосовая команда: Озвучивание текста
 
-    Команды
+    Команды:
         озвучь|скажи <текст> - озвучить переданный текст
         буфер                - озвучить текст из буфера обмена
 
-    Опции
+    Опции:
         wavBeforeGeneration: bool  - проигрывать звуковой сигнал перед озвучкой (полезно, если TTS может думать долго)
         wavPath: str               - путь к WAV-файлу сигнала
-        useTtsEngineId2: bool      - озвучивать вторым движком (say2), иначе основным (say)
+        usetts_engine_id_2: bool      - озвучивать вторым движком (say2), иначе основным (say)
 """
 
 modname = os.path.basename(__package__)[12:]
@@ -26,7 +26,7 @@ def start(core: Core):
         "options": {
             "wavBeforeGeneration": True,
             "wavPath": 'assets/audio/timer.wav',
-            "useTtsEngineId2": True,
+            "usetts_engine_id_2": True,
         },
 
         "commands": {
@@ -104,7 +104,7 @@ def say_clipboard(core: Core, phrase: str):
     Проигрывает звуковой сигнал перед озвучкой, если это включено в настройках
 """
 def _beep_if_needed(core: Core):
-    opts = core.plugin_options(modname) or {}
+    opts = core.extension_options(modname) or {}
     if opts.get("wavBeforeGeneration", True):
         wav_path = opts.get("wavPath", "assets/audio/timer.wav")
         try:
@@ -116,9 +116,9 @@ def _beep_if_needed(core: Core):
     Озвучивает текст выбранным движком согласно опциям
 """
 def _speak(core: Core, text: str):
-    opts = core.plugin_options(modname) or {}
+    opts = core.extension_options(modname) or {}
     try:
-        if opts.get("useTtsEngineId2", True):
+        if opts.get("usetts_engine_id_2", True):
             core.say2(text)
         else:
             core.say(text)

@@ -14,10 +14,10 @@ except Exception:
     _vosk_available = False
 
 """
-    Плагин регистрирует все HTTP и WebSocket, если core.fastApiApp присутствует
+    Расширение регистрирует HTTP и WebSocket, если в core.fastapi_app передан экземпляр FastAPI
 
-    Опции
-        enable_ws_asr - включить WS-распознавание через Vosk
+    Опции:
+        enable_ws_asr - включает WS-распознавание через Vosk
         model_path - путь к модели Vosk
 """
 
@@ -33,9 +33,9 @@ def start(core: Core):
         }
     }
 
-    app = getattr(core, "fastApiApp", None)
+    app = getattr(core, "fastapi_app", None)
     if app is None:
-        #core.print_red("[api] FastAPI app не найден (core.fastApiApp is None)- плагин в пассивном режиме")
+        #core.print_red("[api] FastAPI app не найден (core.fastapi_app is None)
         return manifest
 
     _register_http_routes(core, app)
@@ -67,9 +67,9 @@ def start(core: Core):
 def _register_http_routes(core: Core, app):
     @app.get("/tts-wav")
     async def tts_wav(text: str):
-        core.remoteTTS = "saywav"
+        core.remote_tts = "saywav"
         core.play_voice_assistant_speech(text)
-        return core.remoteTTSResult
+        return core.remote_tts_result
 
     @app.get("/send-txt-cmd")
     async def send_txt_cmd(cmd: str, format: str = "none"):
@@ -129,24 +129,24 @@ def _register_ws_asr_routes(core, app, model: "Model"):
     # 48000 + возвращаем и текст и wav
     make_ws("/ws-mic", 48000, "saytxt,saywav")
 
-def _get_opts(core, plugin_name: str, defaults: Dict[str, Any]) -> Dict[str, Any]:
-    saved = core.plugin_options(plugin_name) or {}
+def _get_opts(core, extension_name: str, defaults: Dict[str, Any]) -> Dict[str, Any]:
+    saved = core.extension_options(extension_name) or {}
     # saved перекрывает defaults
     return {**defaults, **saved}
 
 def _run_cmd(core, cmd: str, return_format: str):
-    core.remoteTTS = return_format
-    core.remoteTTSResult = ""
-    core.lastSay = ""
+    core.remote_tts = return_format
+    core.remote_tts_result = ""
+    core.last_say = ""
     core.execute_next(cmd, core.context)
-    return core.remoteTTSResult
+    return core.remote_tts_result
 
 def _send_raw_txt(core, txt: str, return_format: str = "none"):
-    core.remoteTTS = return_format
-    core.remoteTTSResult = ""
-    core.lastSay = ""
+    core.remote_tts = return_format
+    core.remote_tts_result = ""
+    core.last_say = ""
     is_found = core.run_input_str(txt)
-    return core.remoteTTSResult if is_found else "NO_VA_NAME"
+    return core.remote_tts_result if is_found else "NO_VA_NAME"
 
 """
     Поведение:
