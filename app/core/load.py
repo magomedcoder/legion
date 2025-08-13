@@ -12,8 +12,8 @@ from os.path import isfile, isdir, join
     Формат расширения: app/extensions/<extension_name>/main.py
 
     Каждое расширение должно реализовывать:
-        start(loader) -> dict (манифест)
-        (опционально) start_with_options(loader, manifest) -> dict | None - вызывается после того, как manifest["options"] заполнен значениями
+        manifest() -> dict (манифест)
+        start(loader, manifest) -> dict | None - вызывается после manifest
 """
 class Load:
     def __init__(self):
@@ -55,11 +55,11 @@ class Load:
             return False
 
         try:
-            manifest = mod.start(self)
+            manifest = mod.manifest()
             if not isinstance(manifest, dict):
-                raise TypeError("start() должен возвращать dict (манифест)")
+                raise TypeError("manifest() должен возвращать dict (манифест)")
         except Exception as e:
-            self.print_error(f"ОШИБКА: {folder_name} - ошибка в start(): {e}")
+            self.print_error(f"ОШИБКА: {folder_name} - ошибка в manifest(): {e}")
             return False
 
         if "options" in manifest and not isinstance(manifest["options"], dict):
@@ -68,16 +68,16 @@ class Load:
         manifest.setdefault("options", {})
 
         try:
-            if hasattr(mod, "start_with_options"):
-                res2 = mod.start_with_options(self, manifest)
+            if hasattr(mod, "start"):
+                res2 = mod.start(self, manifest)
                 if isinstance(res2, dict):
                     manifest = res2
                     if "options" in manifest and not isinstance(manifest["options"], dict):
-                        self.print_error(f"ОШИБКА: {folder_name} - 'options' после start_with_options должен быть dict")
+                        self.print_error(f"ОШИБКА: {folder_name} - 'options' после start должен быть dict")
                         return False
                     manifest.setdefault("options", {})
         except Exception as e:
-            self.print_error(f"ОШИБКА: {folder_name} - ошибка в start_with_options(): {e}")
+            self.print_error(f"ОШИБКА: {folder_name} - ошибка в start(): {e}")
             return False
 
         try:
@@ -120,6 +120,6 @@ class Load:
     """
         Возвращает опции указанного расширения
     """
-    def extension_options(self, extension_name):
-        manifest = self.extension_manifest(extension_name)
-        return manifest.get("options")
+    def extension_options(self, package):
+        manifest = self.extension_manifest(package[15:])
+        return manifest.get("options") or {}

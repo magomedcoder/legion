@@ -1,4 +1,3 @@
-import os
 import pyttsx3
 
 from app.core.core import Core
@@ -7,10 +6,8 @@ from app.core.core import Core
     TTS через библиотеку pyttsx3
 """
 
-modname = os.path.basename(__package__)[12:]
-
-def start(core: Core):
-    manifest = {
+def manifest():
+    return {
         "name": "TTS через pyttsx3",
 
         "options": {
@@ -25,16 +22,15 @@ def start(core: Core):
             "pyttsx": (init, say, to_wav_file)
         }
     }
-    return manifest
 
-def start_with_options(core: Core, manifest: dict):
+def start(core: Core, manifest: dict):
     pass
 
 """
     Инициализация pyttsx3 и настройка параметров голоса
 """
 def init(core: Core):
-    options = core.extension_options(modname)
+    options = core.extension_options(__package__)
     core.ttsEngine = pyttsx3.init()
     voices = core.ttsEngine.getProperty("voices")
     # if 0 <= options["sysId"] < len(voices):

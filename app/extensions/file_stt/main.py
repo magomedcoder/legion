@@ -29,10 +29,8 @@ except Exception:
         распознай файл runtime/test.mp3
 """
 
-modname = os.path.basename(__package__)[12:]
-
-def start(core: Core):
-    manifest = {
+def manifest():
+    return {
         "name": "Файл с аудио в текст",
 
         "options": {
@@ -50,15 +48,9 @@ def start(core: Core):
             "распознай файл": _stt_entry,
         }
     }
-    return manifest
 
-def start_with_options(core: Core, manifest: dict):
-    return manifest
-
-def _opts(core: Core) -> Dict[str, Any]:
-    defaults = start(core)["options"]
-    saved = core.extension_options(modname) or {}
-    return {**defaults, **saved}
+def start(core: Core, manifest: dict):
+    pass
 
 def _parse_path_from_phrase(phrase: str) -> Optional[str]:
     text = (phrase or "").strip()
@@ -142,15 +134,15 @@ def _stt_entry(core: Core, phrase: str):
         core.say("Библиотека Vosk недоступна")
         return
 
-    cfg = _opts(core)
-    model_path = cfg["model_path"]
-    sample_rate = int(cfg["sample_rate"])
-    ffmpeg_cmd = cfg["ffmpeg_cmd"]
-    say_result = bool(cfg["say_result"])
-    return_words = bool(cfg["return_words"])
-    max_seconds = int(cfg["max_seconds"])
-    save_json_path = (cfg.get("save_json_path") or "").strip()
-    save_srt_path = (cfg.get("save_srt_path") or "").strip()
+    opts = core.extension_options(__package__)
+    model_path = opts["model_path"]
+    sample_rate = int(opts["sample_rate"])
+    ffmpeg_cmd = opts["ffmpeg_cmd"]
+    say_result = bool(opts["say_result"])
+    return_words = bool(opts["return_words"])
+    max_seconds = int(opts["max_seconds"])
+    save_json_path = (opts.get("save_json_path") or "").strip()
+    save_srt_path = (opts.get("save_srt_path") or "").strip()
 
     path = _parse_path_from_phrase(phrase)
     if not path or not os.path.exists(path):

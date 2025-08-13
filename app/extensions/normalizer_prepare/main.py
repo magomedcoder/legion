@@ -1,13 +1,13 @@
 import logging
-import os
 import re
 
 from app.core.core import Core
 
 """
     Расширение для нормализации текста перед синтезом речи
+
     Функциональность:
-        1. Замена неподдерживаемых или нестабильно обрабатываемых символов на словесные эквиваленты (например: "$" → "доллар")
+        1. Замена неподдерживаемых или нестабильно обрабатываемых символов на словесные эквиваленты (например: "$" -> "доллар")
         2. Обработка чисел:
             - преобразование в числительное (прописью)
             - удаление
@@ -17,27 +17,24 @@ from app.core.core import Core
             - удаление
             - сохранение без изменений
 
-    Назначение:
-        Снизить количество ошибок генерации речи в TTS-моделях, которые могут некорректно интерпретировать латиницу, специальные символы и числовые значения
+        Опции:
+            hangeNumbers         - ЧИСЛА: process | delete | no_process
+            changeLatin          - ЛАТИНИЦА: process | delete | no_process
+            changeSymbols        - символы, которые заменяем словами
+            keepSymbols          - символы, которые оставляем как есть
+            deleteUnknownSymbols - удалять ли всё остальное из прочих символов
+        
 """
 
-modname = os.path.basename(__package__)[12:]
-logger = logging.getLogger(__name__)
-
-def start(core: Core):
-    manifest = {
+def manifest():
+    return {
         "name": "Нормализатор: латиница и символы",
 
         "options": {
-            # ЧИСЛА: process | delete | no_process
             "changeNumbers": "process",
-            # ЛАТИНИЦА: process | delete | no_process
             "changeLatin": "process",
-            # Символы, которые заменяем словами
             "changeSymbols": r"#$%&*+\-/<=>@~[\]_`{|}№\\^",
-            # Символы, которые оставляем как есть
             "keepSymbols": r",.?!;:() «»\"' ",
-            # Удалять ли всё остальное из прочих символов
             "deleteUnknownSymbols": True,
         },
 
@@ -45,16 +42,17 @@ def start(core: Core):
             "prepare": (init, normalize)
         },
     }
-    return manifest
 
-def start_with_options(core: Core, manifest: dict):
-    return manifest
+logger = logging.getLogger(__name__)
+
+def start(core: Core, manifest: dict):
+    pass
 
 def init(core: Core):
     pass
 
 def normalize(core: Core, text: str) -> str:
-    opts = core.extension_options(modname) or {}
+    opts = core.extension_options(__package__)
     logger.debug("Текст до преобразований: %s", text)
 
     # Если только кириллица + разрешённая пунктуация - возвращаем как есть

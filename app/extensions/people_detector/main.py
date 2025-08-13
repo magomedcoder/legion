@@ -29,17 +29,8 @@ from app.core.core import Core
         start_on_load       - запуск детектора при старте расширения
 """
 
-modname = os.path.basename(__package__)[15:]
-
-_worker: Optional[threading.Thread] = None
-_stop_evt: Optional[threading.Event] = None
-_state_lock = threading.Lock()
-_last_count: int = 0
-_alert_enabled: bool = False
-_last_alert_ts: float = 0.0
-
-def start(core: Core):
-    manifest = {
+def manifest():
+    return {
         "name": "Детектор людей",
 
         "options": {
@@ -65,14 +56,20 @@ def start(core: Core):
         },
     }
 
-    opts = core.extension_options(modname) or {}
+_worker: Optional[threading.Thread] = None
+_stop_evt: Optional[threading.Event] = None
+_state_lock = threading.Lock()
+_last_count: int = 0
+_alert_enabled: bool = False
+_last_alert_ts: float = 0.0
+
+def start(core: Core, manifest: dict):
+    opts = core.extension_options(__package__)
     if bool(opts.get("start_on_load", False)):
         try:
             _start_worker(core)
         except Exception:
             pass
-
-    return manifest
 
 def _cmd_start(core: Core, phrase: str):
     try:
@@ -112,7 +109,7 @@ def _start_worker(core: Core):
     if _worker and _worker.is_alive():
         return
 
-    opts = core.extension_options(modname) or {}
+    opts = core.extension_options(__package__)
     prototxt = os.path.join(opts.get("model_dir", ""), opts.get("prototxt", "deploy.prototxt"))
     weights = os.path.join(opts.get("model_dir", ""), opts.get("weights", "mobilenet_iter_73000.caffemodel"))
 

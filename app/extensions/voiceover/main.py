@@ -16,11 +16,8 @@ from app.core.core import Core
         usetts_engine_id_2: bool      - озвучивать вторым движком (say2), иначе основным (say)
 """
 
-modname = os.path.basename(__package__)[12:]
-logger = logging.getLogger(__name__)
-
-def start(core: Core):
-    manifest = {
+def manifest():
+    return {
         "name": "Озвучивание текста",
 
         "options": {
@@ -35,9 +32,9 @@ def start(core: Core):
         }
     }
 
-    return manifest
+logger = logging.getLogger(__name__)
 
-def start_with_options(core: Core, manifest: dict):
+def start(core: Core, manifest: dict):
     pass
 
 """
@@ -104,7 +101,7 @@ def say_clipboard(core: Core, phrase: str):
     Проигрывает звуковой сигнал перед озвучкой, если это включено в настройках
 """
 def _beep_if_needed(core: Core):
-    opts = core.extension_options(modname) or {}
+    opts = core.extension_options(__package__)
     if opts.get("wavBeforeGeneration", True):
         wav_path = opts.get("wavPath", "assets/audio/timer.wav")
         try:
@@ -116,7 +113,7 @@ def _beep_if_needed(core: Core):
     Озвучивает текст выбранным движком согласно опциям
 """
 def _speak(core: Core, text: str):
-    opts = core.extension_options(modname) or {}
+    opts = core.extension_options(__package__)
     try:
         if opts.get("usetts_engine_id_2", True):
             core.say2(text)

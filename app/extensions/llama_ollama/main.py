@@ -1,4 +1,3 @@
-import os
 import json
 import traceback
 from typing import Any, Dict
@@ -27,9 +26,7 @@ from app.core.core import Core
 
 """
 
-modname = os.path.basename(__package__)[12:]
-
-def start(core: Core):
+def manifest():
     manifest = {
         "name": "Llama 3.1 (Ollama)",
 
@@ -50,9 +47,8 @@ def start(core: Core):
     }
     return manifest
 
-def _get_opts(core: Core, extension_name: str, defaults: Dict[str, Any]) -> Dict[str, Any]:
-    saved = core.extension_options(extension_name) or {}
-    return {**defaults, **saved}
+def start(core: Core, manifest: dict):
+    pass
 
 def _post_ollama_generate(host: str, payload: Dict[str, Any]):
     url = f"{host.rstrip('/')}/api/generate"
@@ -66,16 +62,19 @@ def _post_ollama_generate(host: str, payload: Dict[str, Any]):
                 obj = json.loads(line)
             except Exception:
                 continue
+
             chunk = obj.get("response")
             if chunk:
                 full_text.append(chunk)
+
             if obj.get("done"):
                 break
+
         return "".join(full_text).strip()
 
 def ask_llama(core: Core, phrase: str):
     try:
-        cfg = _get_opts(core, modname, start(core)["options"])
+        opts = manifest()["options"]
 
         query = (phrase or "").strip()
         if not query:
@@ -83,31 +82,31 @@ def ask_llama(core: Core, phrase: str):
             return
 
         payload = {
-            "model": cfg["model"],
+            "model": opts["model"],
             "prompt": query,
             "stream": True,
             "options": {
-                "temperature": cfg.get("temperature", 0.6),
-                "top_p": cfg.get("top_p", 0.95),
+                "temperature": opts.get("temperature", 0.6),
+                "top_p": opts.get("top_p", 0.95),
             },
-            "system": cfg.get("system_prompt") or None,
+            "system": opts.get("system_prompt") or None,
         }
 
-        max_tokens = cfg.get("max_tokens")
+        max_tokens = opts.get("max_tokens")
         if isinstance(max_tokens, int) and max_tokens > 0:
             payload["options"]["num_predict"] = max_tokens
 
-        stop = cfg.get("stop") or []
+        stop = opts.get("stop") or []
         if isinstance(stop, list) and stop:
             payload["options"]["stop"] = stop
 
-        answer = _post_ollama_generate(cfg["ollama_host"], payload)
+        answer = _post_ollama_generate(opts["ollama_host"], payload)
 
         if not answer:
             core.say("Ответ пустой. Возможно, модель не запущена или вернула пустой результат")
             return
 
-        if cfg.get("say_answer", True):
+        if opts.get("say_answer", True):
             core.say(answer)
         else:
             print(f"[llama] {answer}")

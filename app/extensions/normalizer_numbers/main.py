@@ -1,15 +1,11 @@
-import os
-
 from app.core.core import Core
 
 """
     Регистрирует нормализатор текста, который преобразует числа в словесную форму
 """
 
-modname = os.path.basename(__package__)[12:]
-
-def start(core: Core):
-    manifest = {
+def manifest():
+    return {
         "name": "Нормализатор чисел",
 
         "normalizer": {
@@ -19,9 +15,8 @@ def start(core: Core):
             "numbers": (init, normalize)
         }
     }
-    return manifest
 
-def start_with_options(core: Core, manifest: dict):
+def start(core: Core, manifest: dict):
     pass
 
 """

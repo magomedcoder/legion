@@ -32,12 +32,8 @@ from app.utils.num_to_text_ru import num2text
         wavPath: str              - путь к WAV сигналу таймера
 """
 
-modname = (__package__ or "common").split(".")[-1]
-
-_last_list_ids: list[int] = []
-
-def start(core: Core):
-    manifest = {
+def manifest():
+    return {
         "name": "привет/дата/время/таймер/рандом",
 
         "options": {
@@ -68,17 +64,16 @@ def start(core: Core):
             "команды": _list_all_commands,
         }
     }
-    return manifest
 
-def start_with_options(core: Core, manifest: dict):
-    return manifest
+_last_list_ids: list[int] = []
+
+def start(core: Core, manifest: dict):
+    pass
 
 def _play_greetings(core: Core, phrase: str):
-    greetings = ["И тебе привет!", "Рада тебя видеть!"]
-    greet_str = random.choice(greetings)
-    print(f"- Сейчас скажу: {greet_str}")
+    greet_str = random.choice(["И тебе привет!", "Рада тебя видеть!"])
     core.play_voice_assistant_speech(greet_str)
-    print(f"- Сказала: {greet_str}")
+    print(f"Сказала: {greet_str}")
 
 def _play_date(core: Core, phrase: str):
     now = datetime.now()
@@ -93,7 +88,7 @@ def _fmt_date_ru(date: str) -> str:
     return f"{day_list[int(dd)-1]} {month_list[int(mm)-1]}"
 
 def _play_time(core: Core, phrase: str):
-    opts = core.extension_options(modname) or {}
+    opts = core.extension_options(__package__)
     sayNoon = bool(opts.get("sayNoon", False))
     skipUnits = bool(opts.get("skipUnits", False))
     unitsSeparator = opts.get("unitsSeparator", ", ")
@@ -203,7 +198,7 @@ def _set_timer_real(core: Core, seconds: int, txt: str):
     core.play_voice_assistant_speech("Ставлю таймер на " + txt)
 
 def _after_timer(core: Core, txt: str):
-    opts = core.extension_options(modname) or {}
+    opts = core.extension_options(__package__)
     times = int(opts.get("wavRepeatTimes", 1))
     wav_path = opts.get("wavPath", "assets/audio/timer.wav")
 

@@ -62,11 +62,11 @@ def run_mic_mode(device=None, samplerate=None):
     Легион в API-режиме (HTTP + WebSocket)
 """
 def run_api_mode():
-    print("[ИНФО] Легион в API-режиме...")
     app = FastAPI()
     core = Core()
     core.fastapi_app = app
     core.init_with_extensions()
+    print("[ИНФО] Легион в API-режиме...")
     uvicorn.run(app, host=core.api_host, port=core.api_port, log_level=core.api_log_level)
 
 """

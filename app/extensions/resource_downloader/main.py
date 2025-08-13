@@ -23,10 +23,8 @@ from app.core.core import Core
             }
 """
 
-modname = os.path.basename(__package__)[12:]
-
-def start(core: Core):
-    manifest = {
+def manifest():
+    return {
         "name": "Загрузчик ресурсов",
 
         "options": {
@@ -58,35 +56,26 @@ def start(core: Core):
         }
     }
 
-    opts = _get_opts(core, modname, manifest["options"])
-
+def start(core: Core, manifest: dict):
+    opts = manifest["options"]
     if opts.get("auto_download_on_start", True):
         force = bool(opts.get("force_on_start", False))
         resources: Dict[str, Dict[str, str]] = opts.get("resources", {})
-        for name, cfg in resources.items():
+        for name, opts in resources.items():
             try:
-                _ensure_resource(cfg, force, tag=f"[{name}]")
+                _ensure_resource(opts, force, tag=f"[{name}]")
             except Exception as e:
                 core.print_red(f"[Загрузчик ресурсов] Ошибка при скачивании {name}: {e}")
-
-    return manifest
-
-def start_with_options(core: Core, manifest: dict):
-    return manifest
-
-def _get_opts(core, extension_name: str, defaults: Dict[str, Any]) -> Dict[str, Any]:
-    saved = core.extension_options(extension_name) or {}
-    return {**defaults, **saved}
 
 """
     Проверка и загрузка ресурса
 """
-def _ensure_resource(cfg: Dict[str, str], force: bool, tag: str):
-    url = cfg["url"]
-    zip_path = cfg["zip_path"]
-    extract_to = cfg["extract_to"]
-    src_dir = cfg["src_dir"]
-    dest_dir = cfg["dest_dir"]
+def _ensure_resource(opts: Dict[str, str], force: bool, tag: str):
+    url = opts["url"]
+    zip_path = opts["zip_path"]
+    extract_to = opts["extract_to"]
+    src_dir = opts["src_dir"]
+    dest_dir = opts["dest_dir"]
 
     if os.path.isdir(dest_dir):
         if not force:
