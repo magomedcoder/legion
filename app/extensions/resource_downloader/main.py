@@ -46,6 +46,13 @@ def start(core: Core):
                     "extract_to": "runtime/resource-downloader/models",
                     "src_dir": "runtime/resource-downloader/models/vosk-model-small-ru-0.22",
                     "dest_dir": "app/models/vosk"
+                },
+                "mobilenet_ssd": {
+                    "url": "https://github.com/chuanqi305/MobileNet-SSD/archive/refs/heads/master.zip",
+                    "zip_path": "runtime/resource-downloader/models/MobileNet-SSD.zip",
+                    "extract_to": "runtime/resource-downloader/models",
+                    "src_dir": "runtime/resource-downloader/models/MobileNet-SSD-master",
+                    "dest_dir": "app/models/mobilenet-ssd"
                 }
             }
         }
