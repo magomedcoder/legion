@@ -2,7 +2,7 @@ import os
 import shutil
 import zipfile
 import urllib.request
-from typing import Dict, Any
+from typing import Dict
 from app.core.core import Core
 
 """

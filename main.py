@@ -4,6 +4,7 @@ import os
 import queue
 import sys
 import threading
+import signal
 import sounddevice
 import uvicorn
 
@@ -12,9 +13,14 @@ from vosk import Model, SetLogLevel, KaldiRecognizer
 
 from app.core.core import Core
 
-# Потокобезопасный флаг блокировки микрофона
-mic_blocked = threading.Event()
-q = queue.Queue()
+# Блокировка микрофона во время TTS/обработки
+mic_blocked = threading.Event()   
+# Общий флаг завершения
+stop_event = threading.Event()  
+# Очередь PCM-чанков от callback() к основному циклу  
+q = queue.Queue()                 
+
+SENTINEL = None
 
 """
     Легион в режиме микрофона:
@@ -25,7 +31,6 @@ def run_mic_mode(device=None, samplerate=None):
     if samplerate is None:
         device_info = sounddevice.query_devices(device, 'input')
         samplerate = int(device_info['default_samplerate'])
-        print(f"[ИНФО] Используется частота дискретизации: {samplerate} Гц")
 
     model_path = "./app/models/vosk"
 
@@ -37,13 +42,26 @@ def run_mic_mode(device=None, samplerate=None):
         sys.exit(1)
 
     model = Model(model_path)
+    rec = None
+    stream = None
 
     print("[ИНФО] Легион инициализирован, ожидание голосовых команд...")
 
-    with sounddevice.RawInputStream(samplerate=samplerate, blocksize=8000, device=device, dtype='int16', channels=1, callback=callback):
+    try:
+        stream = sounddevice.RawInputStream(samplerate=samplerate, blocksize=8000, device=device, dtype='int16', channels=1, callback=callback)
+        stream.start()
+
         rec = KaldiRecognizer(model, samplerate)
-        while True:
-            data = q.get()
+        while not stop_event.is_set():
+            try:
+                data = q.get(timeout=0.5)
+            except queue.Empty:
+                core.update_timers()
+                continue
+
+            if data is SENTINEL:
+                break 
+
             if rec.AcceptWaveform(data):
                 recognized_data = json.loads(rec.Result())
                 voice_input_str = recognized_data.get("text", "")
@@ -58,6 +76,36 @@ def run_mic_mode(device=None, samplerate=None):
                         unblock_mic()
             core.update_timers()
 
+        if rec is not None:
+            try:
+                final_json = json.loads(rec.FinalResult())
+                final_text = final_json.get("text", "")
+                if final_text:
+                    print(f"[ФИНАЛ] {final_text}")
+                    block_mic()
+                    try:
+                        core.run_input_str(final_text)
+                    finally:
+                        unblock_mic()
+            except Exception:
+                pass
+
+    finally:
+        try:
+            if stream is not None:
+                stream.stop()
+                stream.close()
+        except Exception:
+            pass
+
+        if hasattr(core, "shutdown"):
+            try:
+                core.shutdown()
+            except Exception:
+                pass
+
+        print("[ИНФО] Завершение работы")
+
 """
     Легион в API-режиме (HTTP + WebSocket)
 """
@@ -68,6 +116,17 @@ def run_api_mode():
     core.init_with_extensions()
     print("[ИНФО] Легион в API-режиме...")
     uvicorn.run(app, host=core.api_host, port=core.api_port, log_level=core.api_log_level)
+
+def handle_signal(signum, frame):
+    print("\n[ИНФО] Выключаюсь, чуть подождите...", flush=True)
+    stop_event.set()
+    try:
+        q.put_nowait(SENTINEL)
+    except queue.Full:
+        pass
+
+signal.signal(signal.SIGINT, handle_signal)
+signal.signal(signal.SIGTERM, handle_signal)
 
 """
     Блокировка приёма звука с микрофона
@@ -91,14 +150,20 @@ def int_or_str(text):
         return text
 
 """
-    Колбэк для sounddevice: получает аудио и кладёт его в очередь
+    Колбэк получает аудио и кладёт его в очередь
 """
 def callback(indata, frames, time, status):
     if status:
         print(f"[АУДИО] Статус устройства: {status}", file=sys.stderr)
     # Если микрофон НЕ заблокирован - складываем данные
+    if stop_event.is_set():
+        return
+
     if not mic_blocked.is_set():
-        q.put(bytes(indata))
+        try:
+            q.put_nowait(bytes(indata))
+        except queue.Full:
+            pass
     else:
         while not q.empty():
             try:
@@ -115,7 +180,14 @@ if __name__ == "__main__":
 
     SetLogLevel(-1)
 
-    if args.mode == 'mic':
-        run_mic_mode(device=args.device, samplerate=args.samplerate)
-    elif args.mode == 'api':
-        run_api_mode()
+    try:
+        if args.mode == 'mic':
+            run_mic_mode(device=args.device, samplerate=args.samplerate)
+        elif args.mode == 'api':
+            run_api_mode()
+    finally:
+        stop_event.set()
+        try:
+            q.put_nowait(SENTINEL)
+        except queue.Full:
+            pass

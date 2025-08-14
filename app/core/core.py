@@ -63,7 +63,7 @@ class Core(Load):
         self.ttss = {}
 
         # Зарегистрированные проигрыватели WAV: id -> (init_fn, play_fn)
-        self.playwavs = {}
+        self.play_wavs = {}
 
         # Зарегистрированные нормализаторы текста: id -> (init_fn, normalize_fn)
         self.normalizers = {}
@@ -87,7 +87,7 @@ class Core(Load):
         self.tts_cache_dir = "cache/tts"
 
         # Идентификаторы движков TTS, а также проигрывателя
-        self.tts_engine_id = "pyttsx"
+        self.tts_engine_id = "rhvoice"
         self.tts_engine_id_2 = ""
         self.play_wav_engine_id = "audioplayer"
 
@@ -204,7 +204,7 @@ class Core(Load):
     """
         Подмешивает сущности из манифеста расширения в ядро:
             commands - словарь "варианты фраз" -> "следующий контекст/функция"
-            tts/playwav/normalizer - регистрация соответствующих движков
+            tts/play wav/normalizer - регистрация соответствующих движков
             fuzzy_processor - регистрация обработчиков нечеткого сравнения
     """
     def process_extension_manifest(self, modname, manifest):
@@ -224,9 +224,9 @@ class Core(Load):
                 self.ttss[cmd] = manifest["tts"][cmd]
 
         # Движки воспроизведения WAV
-        if "playwav" in manifest:
-            for cmd in manifest["playwav"].keys():
-                self.playwavs[cmd] = manifest["playwav"][cmd]
+        if "play_wav" in manifest:
+            for cmd in manifest["play_wav"].keys():
+                self.play_wavs[cmd] = manifest["play_wav"][cmd]
 
         # Нормализаторы
         if "normalizer" in manifest:
@@ -257,7 +257,7 @@ class Core(Load):
     def setup_assistant_voice(self):
         # Инициализация модуля для воспроизведения WAV-файлов
         try:
-            self.playwavs[self.play_wav_engine_id][0](self)
+            self.play_wavs[self.play_wav_engine_id][0](self)
         except Exception as e:
             self.print_error("Ошибка инициализации расширения воспроизведения WAV (play_wav_engine_id)", e)
             self.tts_engine_id = "console"
@@ -630,10 +630,10 @@ class Core(Load):
             funcparam(self, phrase)
 
     """
-        Воспроизводит WAV-файл через зарегистрированный движок playwav
+        Воспроизводит WAV-файл через зарегистрированный движок play_wav
     """
     def play_wav(self, wavfile):
-        self.playwavs[self.play_wav_engine_id][1](self, wavfile)
+        self.play_wavs[self.play_wav_engine_id][1](self, wavfile)
 
     """
         Разбирает входную строку распознанной речи и запускает команду
