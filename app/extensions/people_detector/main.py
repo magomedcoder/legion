@@ -2,7 +2,7 @@ import os
 import cv2
 import time
 import threading
-from typing import Optional
+from typing import Any, Dict, Optional
 
 from app.core.core import Core
 
@@ -29,7 +29,7 @@ from app.core.core import Core
         start_on_load       - запуск детектора при старте расширения
 """
 
-def manifest():
+def manifest() -> Dict[str, Any]:
     return {
         "name": "Детектор людей",
 
@@ -63,7 +63,7 @@ _last_count: int = 0
 _alert_enabled: bool = False
 _last_alert_ts: float = 0.0
 
-def start(core: Core, manifest: dict):
+def start(core: Core, manifest: Dict[str, Any]) -> None:
     opts = core.extension_options(__package__)
     if bool(opts.get("start_on_load", False)):
         try:

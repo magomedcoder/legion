@@ -13,13 +13,14 @@ try:
 except Exception:
     pass
 
+from typing import Any, Dict
 from app.core.core import Core
 
 """
     Расширение для воспроизведения WAV-файлов с использованием библиотек
 """
 
-def manifest():
+def manifest() -> Dict[str, Any]:
     return {
         "name": "Воспроизведение WAV",
 
@@ -29,7 +30,7 @@ def manifest():
         }
     }
 
-def start(core: Core, manifest: dict):
+def start(core: Core, manifest: Dict[str, Any]) -> None:
     pass
 
 def init(core: Core):

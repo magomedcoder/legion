@@ -29,7 +29,7 @@ except Exception:
         распознай файл runtime/test.mp3
 """
 
-def manifest():
+def manifest() -> Dict[str, Any]:
     return {
         "name": "Файл с аудио в текст",
 
@@ -49,7 +49,7 @@ def manifest():
         }
     }
 
-def start(core: Core, manifest: dict):
+def start(core: Core, manifest: Dict[str, Any]) -> None:
     pass
 
 def _parse_path_from_phrase(phrase: str) -> Optional[str]:

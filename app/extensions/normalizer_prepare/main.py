@@ -1,6 +1,6 @@
 import logging
 import re
-
+from typing import Any, Dict
 from app.core.core import Core
 
 """
@@ -26,7 +26,7 @@ from app.core.core import Core
         
 """
 
-def manifest():
+def manifest() -> Dict[str, Any]:
     return {
         "name": "Нормализатор: латиница и символы",
 
@@ -45,7 +45,7 @@ def manifest():
 
 logger = logging.getLogger(__name__)
 
-def start(core: Core, manifest: dict):
+def start(core: Core, manifest: Dict[str, Any]) -> None:
     pass
 
 def init(core: Core):

@@ -26,7 +26,7 @@ from app.core.core import Core
 
 """
 
-def manifest():
+def manifest() -> Dict[str, Any]:
     manifest = {
         "name": "Llama 3.1 (Ollama)",
 
@@ -47,7 +47,7 @@ def manifest():
     }
     return manifest
 
-def start(core: Core, manifest: dict):
+def start(core: Core, manifest: Dict[str, Any]) -> None:
     pass
 
 def _post_ollama_generate(host: str, payload: Dict[str, Any]):

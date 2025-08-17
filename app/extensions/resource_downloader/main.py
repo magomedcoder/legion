@@ -2,8 +2,10 @@ import os
 import shutil
 import zipfile
 import urllib.request
+
 from typing import Dict
 from app.core.core import Core
+from typing import Any, Dict
 
 """
     Загрузчик ресурсов
@@ -23,7 +25,7 @@ from app.core.core import Core
             }
 """
 
-def manifest():
+def manifest() -> Dict[str, Any]:
     return {
         "name": "Загрузчик ресурсов",
 
@@ -56,7 +58,7 @@ def manifest():
         }
     }
 
-def start(core: Core, manifest: dict):
+def start(core: Core, manifest: Dict[str, Any]) -> None:
     opts = manifest["options"]
     if opts.get("auto_download_on_start", True):
         force = bool(opts.get("force_on_start", False))

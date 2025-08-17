@@ -2,6 +2,7 @@ import time
 import random
 import re
 from datetime import datetime
+from typing import Any, Dict
 
 from app.core.core import Core
 from app.utils.num_to_text_ru import num2text
@@ -32,7 +33,7 @@ from app.utils.num_to_text_ru import num2text
         wavPath: str              - путь к WAV сигналу таймера
 """
 
-def manifest():
+def manifest() -> Dict[str, Any]:
     return {
         "name": "привет/дата/время/таймер/рандом",
 
@@ -67,7 +68,7 @@ def manifest():
 
 _last_list_ids: list[int] = []
 
-def start(core: Core, manifest: dict):
+def start(core: Core, manifest: Dict[str, Any]) -> None:
     pass
 
 def _play_greetings(core: Core, phrase: str):

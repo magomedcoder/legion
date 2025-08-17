@@ -1,5 +1,6 @@
 import pyttsx3
 
+from typing import Any, Dict
 from app.core.core import Core
 from .rhvoice import RHVClient
 
@@ -12,7 +13,7 @@ from .rhvoice import RHVClient
         3. to_wav_file - озвучка в файл
 """
 
-def manifest():
+def manifest() -> Dict[str, Any]:
     return {
         "name": "TTS через pyttsx3",
 
@@ -29,7 +30,7 @@ def manifest():
         }
     }
 
-def start(core: Core, manifest: dict):
+def start(core: Core, manifest: Dict[str, Any]) -> None:
     pass
 
 

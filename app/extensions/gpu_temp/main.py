@@ -1,6 +1,6 @@
 import shutil
 import subprocess
-from typing import List, Dict
+from typing import List, Dict, Any
 
 from app.core.core import Core
 
@@ -18,7 +18,7 @@ from app.core.core import Core
         alert_temp_threshold (int)  - порог температуры для предупреждения
 
 """
-def manifest():
+def manifest() -> Dict[str, Any]:
     return {
         "name": "Температура видеокарты",
 
@@ -34,7 +34,7 @@ def manifest():
         },
     }
 
-def start(core: Core, manifest: dict):
+def start(core: Core, manifest: Dict[str, Any]) -> None:
     pass
 
 def _cmd_gpu_temp(core: Core, phrase: str):

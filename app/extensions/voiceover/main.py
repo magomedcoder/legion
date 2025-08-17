@@ -1,6 +1,6 @@
 import logging
-import os
 
+from typing import Any, Dict
 from app.core.core import Core
 
 """
@@ -16,7 +16,7 @@ from app.core.core import Core
         usetts_engine_id_2: bool      - озвучивать вторым движком (say2), иначе основным (say)
 """
 
-def manifest():
+def manifest() -> Dict[str, Any]:
     return {
         "name": "Озвучивание текста",
 
@@ -34,7 +34,7 @@ def manifest():
 
 logger = logging.getLogger(__name__)
 
-def start(core: Core, manifest: dict):
+def start(core: Core, manifest: Dict[str, Any]) -> None:
     pass
 
 """

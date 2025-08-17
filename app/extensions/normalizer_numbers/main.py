@@ -1,10 +1,11 @@
+from typing import Any, Dict
 from app.core.core import Core
 
 """
     Регистрирует нормализатор текста, который преобразует числа в словесную форму
 """
 
-def manifest():
+def manifest() -> Dict[str, Any]:
     return {
         "name": "Нормализатор чисел",
 
@@ -16,7 +17,7 @@ def manifest():
         }
     }
 
-def start(core: Core, manifest: dict):
+def start(core: Core, manifest: Dict[str, Any]) -> None:
     pass
 
 """

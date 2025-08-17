@@ -1,5 +1,5 @@
 import traceback
-from typing import Optional
+from typing import Any, Dict, Optional
 from fastapi import FastAPI
 from app.core.core import Core
 from app.utils.fastapi_utils_tasks import repeat_every
@@ -15,7 +15,7 @@ from vosk import Model
         model_path - путь к модели Vosk
 """
 
-def manifest():
+def manifest() -> Dict[str, Any]:
     return {
         "name": "API",
 
@@ -24,7 +24,7 @@ def manifest():
         }
     }
 
-def start(core: Core, manifest: dict):
+def start(core: Core, manifest: Dict[str, Any]) -> None:
     app: Optional[FastAPI] = getattr(core, "fastapi_app", None)
     if app is None:
         return manifest
