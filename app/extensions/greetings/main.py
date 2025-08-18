@@ -322,23 +322,156 @@ def _play_dice(core: Core, phrase: str):
     core.play_voice_assistant_speech(random.choice(["Выпала единица", "Выпало два", "Выпало три", "Выпало четыре", "Выпало пять", "Выпало шесть"]))
 
 def _list_all_commands(core: Core, phrase: str):
-    manifest = start(core)
-    commands_list = []
+    def _extract_cmds(cmds_tree, prefix: str = "") -> list[str]:
+        out: list[str] = []
+        if isinstance(cmds_tree, dict):
+            for key, val in cmds_tree.items():
+                if isinstance(val, dict):
+                    for sub_key in val.keys():
+                        out.append((prefix + key + " " + sub_key).strip())
+                    out.extend(_extract_cmds(val, prefix=(prefix + key + " ").strip()))
+                else:
+                    out.append((prefix + key).strip())
+        elif isinstance(cmds_tree, (list, tuple, set)):
+            for item in cmds_tree:
+                if isinstance(item, str):
+                    out.append((prefix + item).strip())
+                elif isinstance(item, dict):
+                    out.extend(_extract_cmds(item, prefix=prefix))
+        elif isinstance(cmds_tree, str):
+            out.append((prefix + cmds_tree).strip())
+        seen = set()
+        res = []
+        for c in out:
+            if c and c not in seen:
+                res.append(c); seen.add(c)
+        return res
 
-    def _extract_cmds(cmds, prefix=""):
-        for key, value in cmds.items():
-            if isinstance(value, dict):
-                for sub_key in value.keys():
-                    commands_list.append((prefix + key + " " + sub_key).strip())
-            else:
-                commands_list.append((prefix + key).strip())
+    def _extract_commands_from_manifest(man) -> list[str] | None:
+        if isinstance(man, dict):
+            cmds_tree = man.get("commands")
+            if cmds_tree:
+                return _extract_cmds(cmds_tree)
+        if hasattr(man, "manifest_dict") and isinstance(getattr(man, "manifest_dict"), dict):
+            cmds_tree = getattr(man, "manifest_dict").get("commands")
+            if cmds_tree:
+                return _extract_cmds(cmds_tree)
+        return None
 
-    _extract_cmds(manifest["commands"])
+    def _extract_commands_from_module_or_obj(obj) -> list[str] | None:
+        man_fn = getattr(obj, "manifest", None)
+        if callable(man_fn):
+            try:
+                man = man_fn()
+                return _extract_commands_from_manifest(man)
+            except Exception:
+                return None
+        return None
 
-    commands_list = sorted(set(commands_list))
+    def _merge_cmds(dst: dict[str, list[str]], name: str, cmds: list[str]):
+        if not cmds:
+            return
+        if name not in dst:
+            dst[name] = []
+        seen = set(dst[name])
+        for c in cmds:
+            if c not in seen:
+                dst[name].append(c)
+                seen.add(c)
+
+    result: dict[str, list[str]] = {}
+
+    manifest_maps: list[tuple[str, dict]] = []
+    for attr in ("manifests"):
+        val = getattr(core, attr, None)
+        if isinstance(val, dict) and val:
+            manifest_maps.append((attr, val))
+
+    call = getattr(core, "extension_manifests", None)
+    if callable(call):
+        try:
+            mans = call()
+            if isinstance(mans, dict) and mans:
+                manifest_maps.append(("extension_manifests()", mans))
+        except Exception:
+            pass
+
+    for _, mans in manifest_maps:
+        for name, man in mans.items():
+            cmds = _extract_commands_from_manifest(man)
+            if cmds:
+                _merge_cmds(result, str(name) if name else "<manifest>", cmds)
+
+ 
+    registries: list[tuple[str, dict]] = []
+    for attr in ("extensions"):
+        val = getattr(core, attr, None)
+        if isinstance(val, dict) and val:
+            registries.append((attr, val))
+
+    for _, reg in registries:
+        for name, obj in reg.items():
+            cmds = _extract_commands_from_module_or_obj(obj)
+            if cmds:
+                key = str(name) if name else getattr(obj, "__name__", obj.__class__.__name__)
+                _merge_cmds(result, key, cmds)
+
+    for attr in dir(core):
+        if attr.startswith("_"):
+            continue
+        if any(attr == label for label, _ in manifest_maps):
+            continue
+        if any(attr == label for label, _ in registries):
+            continue
+
+        try:
+            val = getattr(core, attr)
+        except Exception:
+            continue
+
+        if isinstance(val, dict):
+            for k, v in val.items():
+                cmds = _extract_commands_from_manifest(v)
+                if not cmds:
+                    cmds = _extract_commands_from_module_or_obj(v)
+                if cmds:
+                    _merge_cmds(result, str(k), cmds)
+
+        elif isinstance(val, (list, tuple, set)):
+            for idx, v in enumerate(val):
+                cmds = _extract_commands_from_manifest(v)
+                if not cmds:
+                    cmds = _extract_commands_from_module_or_obj(v)
+                if cmds:
+                    _merge_cmds(result, f"{attr}[{idx}]", cmds)
+
+        else:
+            cmds = _extract_commands_from_manifest(val)
+            if not cmds:
+                cmds = _extract_commands_from_module_or_obj(val)
+            if cmds:
+                key = getattr(val, "__name__", None) or val.__class__.__name__ or attr
+                _merge_cmds(result, key, cmds)
+
+    for k in list(result.keys()):
+        seen = set()
+        ordered = []
+        for c in result[k]:
+            if c not in seen:
+                ordered.append(c); seen.add(c)
+        result[k] = ordered
+
+    if not result:
+        core.say("Команды не найдены")
+        print("[СПИСОК КОМАНД]: ничего не найдено")
+        return
 
     print("[СПИСОК КОМАНД]:")
-    for cmd in commands_list:
-        print(f" - {cmd}")
+    for ext_name, cmds in result.items():
+        print(f"  [{ext_name}] ({len(cmds)})")
+        for c in cmds:
+            print(f"   - {c}")
 
-    # core.say("Доступные команды: " + "; ".join(commands_list))
+    flat = sorted({c for lst in result.values() for c in lst})
+    if flat:
+        core.say("Доступные команды: " + "; ".join(flat))
