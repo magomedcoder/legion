@@ -2,3 +2,4 @@
 *.pyc
 /app/lib/*.egg-info
 /runtime
+/out

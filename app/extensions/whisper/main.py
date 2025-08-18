@@ -93,7 +93,7 @@ def manifest() -> Dict[str, Any]:
             "max_phrase_silence_ms": 600,
             "min_phrase_ms": 400,
             "max_phrase_ms_cap": 15000,
-            "output_dir": "./runtime/out",
+            "output_dir": "./out/whisper",
             "autosave_txt": True,
             "autosave_srt": True,
             "autosave_vtt": False,

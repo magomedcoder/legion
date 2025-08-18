@@ -40,8 +40,8 @@ def manifest() -> Dict[str, Any]:
             "say_result": False,
             "return_words": False,
             "max_seconds": 900,
-            "save_json_path": "",
-            "save_srt_path": "",
+            "save_json_path": "runtime/file-stt.json",
+            "save_srt_path": "runtime/file-stt.srt",
         },
 
         "commands": {

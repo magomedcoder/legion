@@ -1,5 +1,5 @@
 import json
-from typing import Union
+from typing import Union, Dict, Any
 
 from app.core.core import Core
 from .models import CommonResponse, ReturnFormat
@@ -36,9 +36,8 @@ def normalize_speech_response(result: Union[str, dict]) -> CommonResponse:
             result = json.loads(result)
         except Exception:
             return CommonResponse(text=result)
-            
     if isinstance(result, dict):
-        text = result.get("txt")
+        text = result.get("txt") or result.get("text")
         wav_b64 = result.get("wav_base64")
 
         if isinstance(wav_b64, (bytes, bytearray)):
@@ -48,25 +47,57 @@ def normalize_speech_response(result: Union[str, dict]) -> CommonResponse:
     return CommonResponse()
 
 """
-    При финальной фразе отправляем текст в ядро и получаем ответ (saytxt/saywav), иначе возвращаем partial или пустой результат
+    Обрабатывает пришедший аудиочанк
+    Возвращает
+        {
+            "heard": "<partial|final>",
+            "text": "reply|null>",
+            "wav_base64": "<base6|null>"
+        }
 """
-def process_chunk(core: Core, rec, message: bytes | str, format: str):
+def process_chunk(core: Core, rec, message: bytes | str, format: str) -> Dict[str, Any]:
     if message == b'{"eof" : 1}' or message == '{"eof" : 1}':
-        return rec.FinalResult()
+        try:
+            final = json.loads(rec.FinalResult() or "{}")
+        except Exception:
+            final = {}
+        heard = final.get("text") or None
+        return {"heard": heard, "text": None, "wav_base64": None}
 
     if rec.AcceptWaveform(message):
-        resj = json.loads(rec.Result())
-        text = resj.get("text", "")
+        try:
+            resj = json.loads(rec.Result() or "{}")
+        except Exception:
+            resj = {}
+        text = resj.get("text", "") or ""
+
         if text:
             result = send_raw_txt(core, text, format)
-            if result != "NO_VA_NAME" and isinstance(result, dict) and "wav_base64" in result:
-                # bytes -> str
-                result["wav_base64"] = (
-                    result["wav_base64"].decode("utf-8")
-                    if isinstance(result["wav_base64"], (bytes, bytearray))
-                    else result["wav_base64"]
-                )
-                return json.dumps(result)
-        return "{}"
 
-    return rec.PartialResult()
+            if result != "NO_VA_NAME":
+                norm = normalize_speech_response(result)
+                return {
+                    "heard": text,
+                    "text": norm.text,
+                    "wav_base64": norm.wav_base64,
+                }
+            else:
+         
+                return {
+                    "heard": text,
+                    "text": None,
+                    "wav_base64": None,
+                }
+
+        return {
+            "heard": None,
+            "text": None,
+            "wav_base64": None,
+        }
+
+    try:
+        partial = json.loads(rec.PartialResult() or "{}")
+    except Exception:
+        partial = {}
+    heard_partial = partial.get("partial") or None
+    return {"heard": heard_partial, "text": None, "wav_base64": None}

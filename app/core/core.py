@@ -95,7 +95,7 @@ class Core(Load):
         self.log_policy = "cmd"
 
         # Временная папка
-        self.tmp_dir = "temp"
+        self.tmp_dir = "tmp"
 
         # Счётчик временных файлов
         self.tmp_cnt = 0  
