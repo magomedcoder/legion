@@ -2,7 +2,7 @@ import pyttsx3
 
 from typing import Any, Dict
 from app.core.core import Core
-from .rhvoice import RHVClient
+from ...utils.rhvoice import RHVClient
 
 """
     TTS через RHVoice, pyttsx3 и консоль (для отладки)
@@ -24,7 +24,7 @@ def manifest() -> Dict[str, Any]:
 
         "tts": {
             "console": (console_init, console_say),
-            
+
             "pyttsx": (pyttsx_init, pyttsx_say, pyttsx_to_wav_file),
             "rhvoice": (rhvoice_init, None, rhvoice_to_wav_file)
         }
@@ -68,13 +68,7 @@ def rhvoice_to_wav_file(core: Core, text_to_speech: str, wavfile: str):
     Инициализация pyttsx3
 """
 def pyttsx_init(core: Core):
-    opts = core.extension_options(__package__)
     core.ttsEngine = pyttsx3.init()
-    voices = core.ttsEngine.getProperty("voices")
-    # if 0 <= opts["sys_id"] < len(voices):
-    #     core.ttsEngine.setProperty("voice", voices[opts["sys_id"]].id)
-    # else:
-    #     core.ttsEngine.setProperty("voice", "russian")
     core.ttsEngine.setProperty("voice", "russian")
     core.ttsEngine.setProperty("volume", 1.0)
 

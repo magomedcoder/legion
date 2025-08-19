@@ -21,7 +21,7 @@ from app.utils.num_to_text_ru import num2text
         подбрось|брось монету|монетку                           -> монетка
         подбрось|брось кубик|кость                              -> кубик
         команды                                                 -> перечислить все доступные голосовые команды
-        
+
     Опции:
         # время
         sayNoon: bool             - говорить «полдень» / «полночь» для 12:00 / 00:00
@@ -402,7 +402,7 @@ def _list_all_commands(core: Core, phrase: str):
             if cmds:
                 _merge_cmds(result, str(name) if name else "<manifest>", cmds)
 
- 
+
     registries: list[tuple[str, dict]] = []
     for attr in ("extensions"):
         val = getattr(core, attr, None)

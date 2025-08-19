@@ -100,9 +100,9 @@ def _cmd_gpu_temp(core: Core, phrase: str):
 
 def _query_gpus() -> List[Dict]:
     proc = subprocess.run(
-        ["nvidia-smi", "--query-gpu=index,name,temperature.gpu", "--format=csv,noheader,nounits"], 
-        capture_output=True, 
-        text=True, 
+        ["nvidia-smi", "--query-gpu=index,name,temperature.gpu", "--format=csv,noheader,nounits"],
+        capture_output=True,
+        text=True,
         check=True,
     )
     lines = [ln.strip() for ln in proc.stdout.splitlines() if ln.strip()]

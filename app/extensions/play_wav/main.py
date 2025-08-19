@@ -55,5 +55,5 @@ def play_wav_sounddevice(core: Core, wav_file: str):
     data_set_new = numpy.concatenate((data_set,zeros))
     sound_device.play(data_set_new, fsample)
     status = sound_device.wait()
-    
+
     return

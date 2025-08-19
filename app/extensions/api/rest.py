@@ -1,7 +1,10 @@
-from fastapi import APIRouter, FastAPI, HTTPException, status
+import os
+from fastapi import APIRouter, FastAPI, HTTPException, status, UploadFile, File, Form
 from app.core.core import Core
 from .models import SynthesizeRequest, SynthesizeResponse, CommonResponse, CommonRequest, ErrorResponse
 from .utils import run_cmd, send_raw_txt, normalize_speech_response
+import shutil
+from app.extensions.stt_speaker_vosk_speechbrain.main import process_audio_file
 
 def attach_rest(core: Core, app: FastAPI) -> None:
     router = APIRouter(prefix="/api/v1", tags=["API"])
@@ -73,5 +76,37 @@ def attach_rest(core: Core, app: FastAPI) -> None:
             raise
         except Exception as e:
             raise HTTPException(status_code=400, detail=f"Ошибка обработки фразы: {e}")
-        
+
+    @router.post("/stt-speaker/upload",
+        response_model=dict,
+        summary="Загрузка аудио и получение STT+спикеров"
+    )
+    async def stt_upload(
+        file: UploadFile = File(..., description="Аудио"),
+        diarize: bool = Form(True),
+        return_srt: bool = Form(True),
+    ):
+        temp_path = None
+        try:
+            suffix = os.path.splitext(file.filename or "")[-1] or ".bin"
+            basename = f"upload_{os.getpid()}_{os.urandom(4).hex()}{suffix}"
+            temp_path = os.path.join(os.path.join(os.getcwd(), "runtime", "tmp"), basename)
+
+            with open(temp_path, "wb") as out:
+                shutil.copyfileobj(file.file, out)
+
+            result = process_audio_file(core, temp_path, diarize=diarize)
+            if not return_srt and isinstance(result, dict):
+                result.pop("srt", None)
+
+            return {"result": result}
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Ошибка обработки: {e}")
+        finally:
+            try:
+                if temp_path and os.path.exists(temp_path):
+                    os.unlink(temp_path)
+            except Exception:
+                pass
+
     app.include_router(router)

@@ -36,7 +36,7 @@ def manifest() -> Dict[str, Any]:
         "options": {
             "model_path": "./app/models/vosk",
             "sample_rate": 16000,
-            "ffmpeg_cmd": "ffmpeg", 
+            "ffmpeg_cmd": "ffmpeg",
             "say_result": False,
             "return_words": False,
             "max_seconds": 900,
@@ -82,7 +82,7 @@ def _sec_from_ffprobe(ffmpeg_cmd: str, path: str) -> Optional[float]:
     ffprobe = ffmpeg_cmd.replace("ffmpeg", "ffprobe")
     try:
         out = subprocess.check_output(
-            [ffprobe, "-v", "error", "-show_entries", "format=duration", "-of", "default=noprint_wrappers=1:nokey=1", path], 
+            [ffprobe, "-v", "error", "-show_entries", "format=duration", "-of", "default=noprint_wrappers=1:nokey=1", path],
             stderr=subprocess.STDOUT,
             text=True,
         ).strip()
@@ -178,7 +178,7 @@ def _stt_entry(core: Core, phrase: str):
         try:
             rec.SetWords(True)
         except Exception:
-            pass 
+            pass
 
     # Читаем поток PCM и кормим распознавателю
     full_text = []

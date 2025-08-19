@@ -59,11 +59,11 @@ from app.core.core import Core
         шёпот распознай файл runtime/test.mp3 - транскрипция аудиофайла в текст (оставить язык оригинала)
         шёпот переведи аудио runtime/test.mp3" - перевод аудиофайла на английский
         шёпот распознай подробно runtime/test.mp3 - транскрипция с сохранением словарных таймкодов и JSON
-        
+
         шёпот включи офлайн - запуск потокового распознавания с микрофона
         шёпот включи перевод офлайн - запуск потокового перевода (любой язык -> английский) в реальном времени
         шёпот выключи офлайн - остановка потокового распознавания/перевода
-        
+
         шёпот язык ru - установка языка распознавания (ru, en, auto)
         шёпот подсказка голанг - подсказка с терминами/именами
 """
@@ -222,7 +222,7 @@ def _save_outputs(base: str, text: str, segments: List[Dict[str, Any]], meta: Di
             "language": meta.get("language"),
             "task": meta.get("task"),
             # Могут содержать words, если word_timestamps=True
-            "segments": segments,  
+            "segments": segments,
         }
         with open(base + ".json", "w", encoding="utf-8") as f:
             json.dump(payload, f, ensure_ascii=False, indent=2)
@@ -553,7 +553,7 @@ def _cmd_set_language(core: Core, phrase: str) -> None:
             core.say("Whisper: язык - автоопределение")
         else:
             # Защита от случайного длинного текста
-            if len(lang) > 5:  
+            if len(lang) > 5:
                 core.say("Укажите код языка, например: ru, en, auto")
                 return
             opts["language"] = lang

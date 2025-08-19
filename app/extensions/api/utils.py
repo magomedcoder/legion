@@ -82,7 +82,6 @@ def process_chunk(core: Core, rec, message: bytes | str, format: str) -> Dict[st
                     "wav_base64": norm.wav_base64,
                 }
             else:
-         
                 return {
                     "heard": text,
                     "text": None,

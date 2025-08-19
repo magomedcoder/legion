@@ -23,7 +23,6 @@ from app.core.core import Core
             changeSymbols        - символы, которые заменяем словами
             keepSymbols          - символы, которые оставляем как есть
             deleteUnknownSymbols - удалять ли всё остальное из прочих символов
-        
 """
 
 def manifest() -> Dict[str, Any]:

@@ -14,11 +14,11 @@ from vosk import Model, SetLogLevel, KaldiRecognizer
 from app.core.core import Core
 
 # Блокировка микрофона во время TTS/обработки
-mic_blocked = threading.Event()   
+mic_blocked = threading.Event()
 # Общий флаг завершения
-stop_event = threading.Event()  
-# Очередь PCM-чанков от callback() к основному циклу  
-q = queue.Queue()                 
+stop_event = threading.Event()
+# Очередь PCM-чанков от callback() к основному циклу
+q = queue.Queue()
 
 SENTINEL = None
 

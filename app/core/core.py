@@ -33,7 +33,7 @@ class Core(Load):
         # Инициализируем базовый загрузчик расширений
         Load.__init__(self)
 
-        # Настройки API 
+        # Настройки API
         self.api_host = "0.0.0.0"
         self.api_port = 8000
         self.api_log_level = "error"
@@ -47,7 +47,7 @@ class Core(Load):
         # Колбэк на обновление (не используется)
         self.timers_func_upd = [None, None, None, None, None, None, None, None]
 
-        # Колбэк при завершении  
+        # Колбэк при завершении
         self.timers_func_end = [None, None, None, None, None, None, None, None]
 
         # Продолжительности таймеров (пока не заполняются)
@@ -98,16 +98,16 @@ class Core(Load):
         self.tmp_dir = "tmp"
 
         # Счётчик временных файлов
-        self.tmp_cnt = 0  
+        self.tmp_cnt = 0
 
         # Последняя озвученная фраза и режим удалённого TTS
         self.last_say = ""
 
         # Варианты: "none", "saytxt", "saywav" или комбинированно через запятую
-        self.remote_tts = "none"  
+        self.remote_tts = "none"
 
         # Сюда складывается результат для удалённого клиента
-        self.remote_tts_result = None  
+        self.remote_tts_result = None
 
         # Текущий контекст диалога и таймер его очистки
         self.context = None
@@ -152,7 +152,7 @@ class Core(Load):
 
         # Порог уверенности для нечеткого распознавания команд
         self.fuzzy_threshold = 0.5,
- 
+
         self.runtime_path = Path(self.runtime_dir)
         self.tmp_path = self.runtime_path / self.tmp_dir
         self.tts_cache_path = self.runtime_path / self.tts_cache_dir
@@ -370,13 +370,13 @@ class Core(Load):
     """
         Псевдоним для play_voice_assistant_speech
     """
-    def say(self, text_to_speech: str):  
+    def say(self, text_to_speech: str):
         self.play_voice_assistant_speech(text_to_speech)
 
     """
         Озвучивает через второй TTS-движок
     """
-    def say2(self, text_to_speech: str):  
+    def say2(self, text_to_speech: str):
         if self.ttss[self.tts_engine_id_2][1] is not None:
             self.ttss[self.tts_engine_id_2][1](self, text_to_speech)
         else:
@@ -490,15 +490,15 @@ class Core(Load):
     def execute_next(self, command, context):
         is_first_call = False
         # первый вход
-        if context is None:  
+        if context is None:
             is_first_call = True
             context = self.commands
             # сохраняем полноценную фразу
-            self.input_cmd_full = command  
+            self.input_cmd_full = command
 
         if isinstance(context, dict):
             # продолжаем разбор
-            pass  
+            pass
         else:
             # context -  это уже функция, выполняем её
             self.context_clear()
@@ -565,7 +565,7 @@ class Core(Load):
 
                 return i
         # нет свободных таймеров
-        return -1  
+        return -1
 
     """
         Очищает таймер по индексу. При runEndFunc=True дополнительно вызовет его end-колбэк
@@ -625,7 +625,7 @@ class Core(Load):
     def call_ext_func_phrase(self, phrase, funcparam):
         if isinstance(funcparam, tuple):  # funcparam =(func, param)
             funcparam[0](self, phrase, funcparam[1])
-        else: 
+        else:
             # funcparam = func
             funcparam(self, phrase)
 

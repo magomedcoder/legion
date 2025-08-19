@@ -28,7 +28,7 @@ def start(core: Core, manifest: Dict[str, Any]) -> None:
     app: Optional[FastAPI] = getattr(core, "fastapi_app", None)
     if app is None:
         return manifest
-    
+
     opts = manifest["options"]
 
     attach_rest(core, app)
