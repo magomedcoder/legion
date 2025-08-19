@@ -12,19 +12,15 @@ from vosk import Model, KaldiRecognizer
 from app.core.core import Core
 
 try:
-    from speechbrain.inference import EncoderClassifier
+    from speechbrain.pretrained import EncoderClassifier
     from sklearn.cluster import AgglomerativeClustering
 except Exception:
     pass
 
 """
-    Расширение: Голос -> Текст + Диаризация (определение спикеров)
+    Голос -> Текст + Диаризация (определение спикеров)
 
-    # pip install scikit-learn speechbrain librosa torch torchaudio --extra-index-url https://download.pytorch.org/whl/cu121
-
-    Команды:
-        голос в текст runtime/test.mp3
-        распознай голоса runtime/test.mp3
+    # pip install python-multipart scikit-learn speechbrain librosa torch torchaudio --extra-index-url https://download.pytorch.org/whl/cu121
 
     Опции:
         vosk_model_path (str) - путь к директории модели Vosk
@@ -43,6 +39,10 @@ except Exception:
         device (str) - cpu | cuda
         cpu_num_threads (int) - >0 ограничить torch.set_num_threads
         batch_seconds (float) - батчинг сегментов при диаризации (0 = выкл)
+
+    Команды:
+        голос в текст runtime/test.mp3
+        распознай голоса runtime/test.mp3
 
     Структура выходных данных:
         {
@@ -79,6 +79,8 @@ def manifest() -> Dict[str, Any]:
 
         "options": {
             "vosk_model_path": "./app/models/vosk",
+            "model_speechbrain_dir": "./app/models/spkrec-ecapa-voxceleb",
+            "model_tmp_speechbrain_dir": "./runtime/models/stt-speaker-vosk-speechbrain",
             "sample_rate": 16000,
             "ffmpeg_cmd": "ffmpeg",
             "say_result": False,
@@ -244,10 +246,11 @@ def _run_vosk_stt(wav_path: str, sr: int, want_words: bool, model_dir: str) -> T
 
     return full_text, words_norm
 
-def _speaker_diarization(wav_path: str, sr: int, window_sec: float, hop_sec: float, num_speakers: int = 0, min_merge_gap: float = 0.4, device: str = "cpu", batch_seconds: float = 0.0) -> List[dict]:
+def _speaker_diarization(opts: Dict, wav_path: str, sr: int, window_sec: float, hop_sec: float, num_speakers: int = 0, min_merge_gap: float = 0.4, device: str = "cpu", batch_seconds: float = 0.0) -> List[dict]:
     classifier = EncoderClassifier.from_hparams(
-        source="speechbrain/spkrec-ecapa-voxceleb",
-        run_opts={"device": device},
+        source=opts["model_speechbrain_dir"],
+        savedir=opts["model_tmp_speechbrain_dir"],
+        run_opts={"device": device}
     )
 
     wav = _read_wav_to_tensor(wav_path, sr)
@@ -444,6 +447,7 @@ def _run_pipeline(core: Core, phrase: str, with_diar: bool):
         if with_diar and opts.get("enable_diarization", True):
             try:
                 segments = _speaker_diarization(
+                    opts,
                     wav_path=wav_path,
                     sr=sr,
                     window_sec=float(opts.get("window_sec", 1.5)),
@@ -529,6 +533,7 @@ def process_audio_file(core: Core, path: str, diarize: bool = True) -> dict:
         segments = []
         if diarize and opts.get("enable_diarization", True):
             segments = _speaker_diarization(
+                opts, 
                 wav_path=wav_path,
                 sr=sr,
                 window_sec=float(opts.get("window_sec", 1.5)),

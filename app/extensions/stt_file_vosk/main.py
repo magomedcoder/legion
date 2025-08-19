@@ -31,7 +31,7 @@ except Exception:
 
 def manifest() -> Dict[str, Any]:
     return {
-        "name": "Файл с аудио в текст",
+        "name": "Файл с аудио в текст (Vosk)",
 
         "options": {
             "model_path": "./app/models/vosk",

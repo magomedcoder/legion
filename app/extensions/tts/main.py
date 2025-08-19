@@ -2,7 +2,7 @@ import pyttsx3
 
 from typing import Any, Dict
 from app.core.core import Core
-from ...utils.rhvoice import RHVClient
+from app.utils.rhvoice import RHVClient
 
 """
     TTS через RHVoice, pyttsx3 и консоль (для отладки)
@@ -51,37 +51,33 @@ def console_say(core: Core, text_to_speech: str):
     Инициализация RHVoice
 """
 def rhvoice_init(core: Core):
-    core.ttsrhvoice = RHVClient()
+    core.tts_rhvoice = RHVClient()
 
 """
     Озвучивание текста с сохранением результата в WAV-файл
 """
 def rhvoice_to_wav_file(core: Core, text_to_speech: str, wavfile: str):
     opts = core.extension_options(__package__)
-    core.ttsrhvoice.to_file(
-        filename=wavfile,
-        text=text_to_speech,
-        voice=opts.get("rhvoice_voice_id"),
-    )
+    core.tts_rhvoice.to_file(filename=wavfile, text=text_to_speech, voice=opts.get("rhvoice_voice_id"))
 
 """
     Инициализация pyttsx3
 """
 def pyttsx_init(core: Core):
-    core.ttsEngine = pyttsx3.init()
-    core.ttsEngine.setProperty("voice", "russian")
-    core.ttsEngine.setProperty("volume", 1.0)
+    core.tts_engine = pyttsx3.init()
+    core.tts_engine.setProperty("voice", "russian")
+    core.tts_engine.setProperty("volume", 1.0)
 
 """
     Озвучивание текста напрямую
 """
 def pyttsx_say(core: Core, text_to_speech: str):
-    core.ttsEngine.say(str(text_to_speech))
-    core.ttsEngine.runAndWait()
+    core.tts_engine.say(str(text_to_speech))
+    core.tts_engine.runAndWait()
 
 """
     Озвучивание текста с сохранением результата в WAV-файл
 """
 def pyttsx_to_wav_file(core: Core, text_to_speech: str, wavfile: str):
-    core.ttsEngine.save_to_file(str(text_to_speech), wavfile)
-    core.ttsEngine.runAndWait()
+    core.tts_engine.save_to_file(str(text_to_speech), wavfile)
+    core.tts_engine.runAndWait()

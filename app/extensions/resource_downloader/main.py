@@ -35,25 +35,25 @@ def manifest() -> Dict[str, Any]:
             "resources": {
                 "eng_to_ipa": {
                     "url": "https://github.com/mphilli/English-to-IPA/archive/refs/heads/master.zip",
-                    "zip_path": "runtime/resource-downloader/lib/eng_to_ipa.zip",
-                    "extract_to": "runtime/resource-downloader/lib",
-                    "src_dir": "runtime/resource-downloader/lib/English-to-IPA-master",
-                    "dest_dir": "app/lib/eng_to_ipa"
+                    "zip_path": "./runtime/resource-downloader/lib/eng_to_ipa.zip",
+                    "extract_to": "./runtime/resource-downloader/lib",
+                    "src_dir": "./runtime/resource-downloader/lib/English-to-IPA-master",
+                    "dest_dir": "./app/lib/eng_to_ipa"
                 },
                 "vosk_ru_small": {
                     "url": "https://alphacephei.com/vosk/models/vosk-model-small-ru-0.22.zip",
-                    "zip_path": "runtime/resource-downloader/models/vosk-model-small-ru-0.22.zip",
-                    "extract_to": "runtime/resource-downloader/models",
-                    "src_dir": "runtime/resource-downloader/models/vosk-model-small-ru-0.22",
-                    "dest_dir": "app/models/vosk"
+                    "zip_path": "./runtime/resource-downloader/models/vosk-model-small-ru-0.22.zip",
+                    "extract_to": "./runtime/resource-downloader/models",
+                    "src_dir": "./runtime/resource-downloader/models/vosk-model-small-ru-0.22",
+                    "dest_dir": "./app/models/vosk"
                 },
                 "mobilenet_ssd": {
                     "url": "https://github.com/chuanqi305/MobileNet-SSD/archive/refs/heads/master.zip",
-                    "zip_path": "runtime/resource-downloader/models/MobileNet-SSD.zip",
-                    "extract_to": "runtime/resource-downloader/models",
-                    "src_dir": "runtime/resource-downloader/models/MobileNet-SSD-master",
-                    "dest_dir": "app/models/mobilenet-ssd"
-                }
+                    "zip_path": "./runtime/resource-downloader/models/MobileNet-SSD.zip",
+                    "extract_to": "./runtime/resource-downloader/models",
+                    "src_dir": "./runtime/resource-downloader/models/MobileNet-SSD-master",
+                    "dest_dir": "./app/models/mobilenet-ssd"
+                },
             }
         }
     }

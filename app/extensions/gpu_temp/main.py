@@ -7,9 +7,6 @@ from app.core.core import Core
 """
     Расширение для получения температуры GPU NVIDIA через nvidia-smi
 
-    Команда:
-        "температура видеокарты" - температура и название GPU
-
     Опции:
         gpu_name_filter (str|None)  - фильтр по имени GPU (регистронезависимо). Пусто/None = без фильтра
         gpu_index (int|None)        - индекс GPU (0..N-1)
@@ -17,6 +14,8 @@ from app.core.core import Core
         say_answer (bool)           - озвучивать ли ответ через TTS
         alert_temp_threshold (int)  - порог температуры для предупреждения
 
+    Команда:
+        температура видеокарты - температура и название GPU
 """
 def manifest() -> Dict[str, Any]:
     return {
