@@ -16,14 +16,14 @@ except Exception:
     Файл с аудио в текст
 
     Опции:
-        model_path: str     - путь к модели Vosk
-        sample_rate: int    - частота дискретизации для распознавания
-        ffmpeg_cmd: str     - команда запуска ffmpeg
-        say_result: bool    - озвучивать ли распознанный текст
-        return_words: bool  - включать ли слова/таймкоды в результат
-        max_seconds: int    - максимальная длительность входного файла в секундах
-        save_json_path: str - путь для сохранения raw JSON результата
-        save_srt_path: str  - путь для сохранения субтитров .srt (используется при return_words=True)
+        model_path (str)     - путь к модели Vosk
+        sample_rate (int)    - частота дискретизации для распознавания
+        ffmpeg_cmd (str)     - команда запуска ffmpeg
+        say_result (bool)    - озвучивать ли распознанный текст
+        return_words (bool)  - включать ли слова/таймкоды в результат
+        max_seconds (int)    - максимальная длительность входного файла в секундах
+        save_json_path (str) - путь для сохранения raw JSON результата
+        save_srt_path (str)  - путь для сохранения субтитров .srt (используется при return_words=True)
 
     Команды:
         распознай файл runtime/test.mp3

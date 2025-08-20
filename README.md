@@ -1,7 +1,7 @@
 ```bash
 sudo add-apt-repository ppa:deadsnakes/ppa
 sudo apt update
-sudo apt install software-properties-common cmake pkg-config python3-launchpadlib python3-pip cmake pkg-config python3 python3-venv python3-dev python3-tk libcairo2-dev libgirepository1.0-dev portaudio19-dev rhvoice rhvoice-russian librhvoice-dev
+sudo apt install software-properties-common cmake pkg-config python3-launchpadlib python3-pip cmake pkg-config ffmpeg python3 python3-venv python3-dev python3-tk libcairo2-dev libgirepository1.0-dev portaudio19-dev rhvoice rhvoice-russian librhvoice-dev
 ```
 
 ```bash

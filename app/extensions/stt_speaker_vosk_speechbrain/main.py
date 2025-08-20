@@ -23,22 +23,22 @@ except Exception:
     # pip install python-multipart scikit-learn speechbrain librosa torch torchaudio --extra-index-url https://download.pytorch.org/whl/cu121
 
     Опции:
-        vosk_model_path (str) - путь к директории модели Vosk
-        sample_rate (int) - целевая частота дискретизации WAV для распознавания (Гц)
-        ffmpeg_cmd (str) имя или полный путь к исполняемому файлу ffmpeg
-        say_result (bool) - озвучивать ли распознанный текст
-        return_words (bool) - возвращать ли слова с таймкодами от Vosk (нужно для точного SRT)
-        max_seconds (int) ограничение длительности входного файла в секундах (0 — без ограничения)
-        enable_diarization (bool) включить диаризацию при наличии зависимостей (speechbrain, scikit-learn)
-        num_speakers (int) - 0 — автооценка- >0 — фиксированное число кластеров
-        window_sec (float) - длина окна (сек) для спикер-эмбеддингов
-        hop_sec (float) - шаг окна (сек)
+        vosk_model_path (str)     - путь к директории модели Vosk
+        sample_rate (int)         - целевая частота дискретизации WAV для распознавания (Гц)
+        ffmpeg_cmd (str)          - имя или полный путь к исполняемому файлу ffmpeg
+        say_result (bool)         - озвучивать ли распознанный текст
+        return_words (bool)       - возвращать ли слова с таймкодами от Vosk (нужно для точного SRT)
+        max_seconds (int)         - ограничение длительности входного файла в секундах (0 - без ограничения)
+        enable_diarization        - (bool) включить диаризацию при наличии зависимостей (speechbrain, scikit-learn)
+        num_speakers (int)        - 0 - автооценка- >0 - фиксированное число кластеров
+        window_sec (float)        - длина окна (сек) для спикер-эмбеддингов
+        hop_sec (float)           - шаг окна (сек)
         min_silence_merge (float) - склейка соседних сегментов одного спикера, если пауза между ними не превышает указанное значение (сек)
-        save_json_path (str) - путь для сохранения полного результата в JSON
-        save_srt_path (str) - путь для сохранения субтитров SRT
-        device (str) - cpu | cuda
-        cpu_num_threads (int) - >0 ограничить torch.set_num_threads
-        batch_seconds (float) - батчинг сегментов при диаризации (0 = выкл)
+        save_json_path (str)      - путь для сохранения raw JSON результата
+        save_srt_path (str)       - путь для сохранения субтитров .srt
+        device (str)              - cpu | cuda
+        cpu_num_threads (int)     - >0 ограничить torch.set_num_threads
+        batch_seconds (float)     - батчинг сегментов при диаризации (0 = выкл)
 
     Команды:
         голос в текст runtime/test.mp3

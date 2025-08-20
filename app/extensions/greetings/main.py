@@ -12,13 +12,13 @@ from app.utils.num_to_text_ru import num2text
 
     Опции:
         # время
-        sayNoon: bool             - говорить «полдень» / «полночь» для 12:00 / 00:00
-        skipUnits: bool           - не произносить единицы («час», «минуты»)
-        unitsSeparator: str       - разделитель между часами и минутами
-        skipMinutesWhenZero: bool - пропускать минуты, если 0
+        sayNoon (bool)             - говорить «полдень» / «полночь» для 12:00 / 00:00
+        skipUnits (bool)           - не произносить единицы («час», «минуты»)
+        unitsSeparator (str)       - разделитель между часами и минутами
+        skipMinutesWhenZero (bool) - пропускать минуты, если 0
         # таймер
-        wavRepeatTimes: int       - сколько раз проигрывать сигнал
-        wavPath: str              - путь к WAV сигналу таймера
+        wavRepeatTimes (int)       - сколько раз проигрывать сигнал
+        wavPath (str)              - путь к WAV сигналу таймера
 
     Команды:
         привет|доброе утро                                      -> приветствие
