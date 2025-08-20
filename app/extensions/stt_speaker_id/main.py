@@ -7,7 +7,7 @@ from .utils import extract_name_after_keyword, exists, extract_path
 """
     Speaker ID + простая диаризация
 
-    pip install speechbrain==0.5.16 numpy scikit-learn librosa soundfile webrtcvad
+    pip install speechbrain==0.5.16 scikit-learn librosa webrtcvad
     git clone https://huggingface.co/speechbrain/spkrec-ecapa-voxceleb app/models/spkrec-ecapa-voxceleb
 
     Опции:

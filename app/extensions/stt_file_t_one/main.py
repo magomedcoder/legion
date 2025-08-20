@@ -21,7 +21,7 @@ except Exception:
     pip install miniaudio
 
     Опции:
-        ffmpeg_cmd (str)        - команда ffmpeg
+        ffmpeg_cmd (str)        - ffmpeg
         sample_rate (int)       - частота дискретизации PCM при декоде через ffmpeg (обычно 16000)
         say_result (bool)       - озвучивать ли распознанный текст
         return_phrases (bool)   - возвращать ли фразы с таймкодами (включает стриминговый прогон)
@@ -38,13 +38,12 @@ def manifest() -> Dict[str, Any]:
         "name": "Файл с аудио в текст (T-one)",
 
         "options": {
-            "ffmpeg_cmd": "ffmpeg",
             "sample_rate": 16000,
             "say_result": False,
             "return_phrases": False,
             "max_seconds": 0,
-            "save_json_path": "runtime/tone-file-stt.json",
-            "save_srt_path": "runtime/tone-file-stt.srt",
+            "save_json_path": "out/tone-file-stt.json",
+            "save_srt_path": "out/tone-file-stt.srt",
         },
 
         "commands": {
